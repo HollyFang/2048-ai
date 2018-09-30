@@ -17,21 +17,21 @@ $.extend(Game.prototype, {
 
 	/* events */
 
-	on: function () {
+	on: function() {
 		this.$el.on.apply(this.$el, arguments)
 	},
-	off: function () {
+	off: function() {
 		this.$el.off.apply(this.$el, arguments)
 	},
-	trigger: function () {
+	trigger: function() {
 		this.$el.trigger.apply(this.$el, arguments)
 	},
 
-	initEvents: function () {
+	initEvents: function() {
 		$(document).on('keydown', $.proxy(this.onKeydown, this))
 	},
 
-	newRound: function () {
+	newRound: function() {
 		this.numbers = new Numbers();
 		this.moves = []
 
@@ -47,7 +47,7 @@ $.extend(Game.prototype, {
 	},
 
 	// TODO bug 不能正确检测游戏结束情况
-	isGameOver: function () {
+	isGameOver: function() {
 		// 检查无法继续合并的情况
 		if (!this.numbers.canMerge()) {
 			this.running = false;
@@ -55,7 +55,7 @@ $.extend(Game.prototype, {
 			this.trigger('gameOver')
 		}
 
-		this.numbers.forEach($.proxy(function (n) {
+		this.numbers.forEach($.proxy(function(n) {
 			if (n === 2048) {
 				this.running = false;
 				this.msgBox.show("Success! You got 2048!");
@@ -65,7 +65,7 @@ $.extend(Game.prototype, {
 		return !this.running
 	},
 
-	onKeydown: function (e) {
+	onKeydown: function(e) {
 		var key = e.which
 		if (!this.running || key < Keys.Left || key > Keys.Down) {
 			return;
@@ -100,7 +100,7 @@ $.extend(Game.prototype, {
 			this.showMove(move)
 
 			// 等待动画完成
-			this.actionTimer = setTimeout($.proxy(function () {
+			this.actionTimer = setTimeout($.proxy(function() {
 				this.actionTimer = null
 				if (!this.isGameOver()) {
 					this.trigger({
@@ -114,8 +114,8 @@ $.extend(Game.prototype, {
 		}
 	},
 
-	renderNumbers: function () {
-		this.numbers.forEach($.proxy(function (num, row, col) {
+	renderNumbers: function() {
+		this.numbers.forEach($.proxy(function(num, row, col) {
 			this.showNumber(row, col, num)
 		}, this))
 	},
@@ -123,13 +123,13 @@ $.extend(Game.prototype, {
 	/*
 	 * @param {Step[]} move - 由一系列的步骤组成的单次移动过程
 	 */
-	showMove: function (move) {
+	showMove: function(move) {
 		for (var i = 0, len = move.length; i < len; i++) {
 			this.showMoveStep(move[i]);
 		}
 	},
 
-	showMoveStep: function (step) {
+	showMoveStep: function(step) {
 		var game = this
 		var from = step.from
 		var to = step.to
@@ -142,35 +142,35 @@ $.extend(Game.prototype, {
 		this.$board.append($cellFromClone)
 		$cellFromClone.attr('data-row', to[0]).attr('data-col', to[1])
 
-		setTimeout(function () {
+		setTimeout(function() {
 			var result = step.result
 			game.updateCell($cellTo, result)
 			$cellFromClone.remove()
 		}, MOVE_ANIMATION_TIME)
 	},
 
-	showNumber: function (row, col, num) {
+	showNumber: function(row, col, num) {
 		this.updateCell(this.getCell(row, col), num)
 	},
 
-	updateCell: function ($cell, num) {
+	updateCell: function($cell, num) {
 		$cell.attr('num',
 				num === 0 ?
-					"no" :
-					num > 2048 ? "super" : num
+				"no" :
+				num > 2048 ? "super" : num
 			)
 			.find('i')
 			.text(num === 0 ? "" : num)
 	},
 
-	addRandomNumber: function () {
+	addRandomNumber: function() {
 		var pos = this.getCellPosition(this.getRandomFreeCell())
 		var num = this.getRandomNumber()
 		this.numbers.set(pos.row, pos.col, num)
 		this.showNumber(pos.row, pos.col, num)
 	},
 
-	getRandomFreeCell: function () {
+	getRandomFreeCell: function() {
 		// 空闲位置 num 属性为 no
 		var cells = this.$board.find('[num="no"]')
 		var count = cells.length
@@ -178,7 +178,7 @@ $.extend(Game.prototype, {
 		return cells.eq(rand)
 	},
 
-	getCellPosition: function ($cell) {
+	getCellPosition: function($cell) {
 		return {
 			row: parseInt($cell.attr("data-row"), 10),
 			col: parseInt($cell.attr("data-col"), 10)
@@ -186,11 +186,11 @@ $.extend(Game.prototype, {
 	},
 
 	// 随机数为 2 或 4
-	getRandomNumber: function () {
+	getRandomNumber: function() {
 		return Math.random() > 0.5 ? 2 : 4
 	},
 
-	getCell: function (row, col) {
+	getCell: function(row, col) {
 		return this.$board.find('.cell-' + row + '-' + col)
 	}
 })

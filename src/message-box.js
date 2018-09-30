@@ -1,20 +1,20 @@
-var $ = require('jquery')
+var jQuery = require('jquery')
 
 function MessageBox(el) {
-	this.$el = $(el || '.game-message')
+	this.$el = jQuery(el || '.game-message')
 	var self = this
-	this.$el.on('click', function () {
+	this.$el.on('click', function() {
 		self.hide()
 	})
 }
 
-$.extend(MessageBox.prototype, {
+jQuery.extend(MessageBox.prototype, {
 
-	show: function (message) {
+	show: function(message) {
 		this.$el.text(message).show()
 	},
 
-	hide: function () {
+	hide: function() {
 		this.$el.hide()
 	}
 

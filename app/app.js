@@ -1,34 +1,262 @@
 require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var $ = require('jquery')
 var Game = require('./game')
+var Auto = require('./autoPlay')
 
-$(function () {
+$(function() {
 	var game = new Game()
 	var $moves = $('.game-moves')
+	var $toggle = $('#toggle')
 
-	$('body').on('click', '.new-round', function () {
+	$('body').on('click', '.new-round', function() {
 		game.newRound()
 	})
 
-	game.on('move', function (e) {
+	game.on('move', function(e) {
 		$moves.text(e.moves.length)
 	})
 
-	game.on('newRound gameOver', function () {
+	game.on('newRound', function() {
 		$moves.empty()
 	})
 
-	game.newRound()
+	game.newRound();
+	var auto = new Auto(game);
+	auto.autoPlay();
+	$toggle.on('click', function() {
+		auto.togglePlay();
+	})
+	game.on('gameOver', function() {
+		auto.pausePlay();
+	})
 })
 
 if (location.protocol.indexOf('http') > -1 && 'serviceWorker' in navigator) {
 	if (location.pathname.indexOf('/2048/app/') > -1) {
-		navigator.serviceWorker.register('service-worker-online.js', {scope: './'})
+		navigator.serviceWorker.register('service-worker-online.js', {
+			scope: './'
+		})
 	} else {
-		navigator.serviceWorker.register('service-worker.js', {scope: './'})
+		navigator.serviceWorker.register('service-worker.js', {
+			scope: './'
+		})
 	}
 }
-},{"./game":2,"jquery":"jquery"}],2:[function(require,module,exports){
+},{"./autoPlay":2,"./game":3,"jquery":"jquery"}],2:[function(require,module,exports){
+var Keys = require('./keys')
+var PREFER_DIRECT = {
+	left: 1,
+	up: 1,
+	down: 0,
+	right: 0
+};
+var FAKE_EVENT = {
+	which: null,
+	preventDefault: () => {}
+};
+Array.prototype.max = function() {
+	return Math.max.apply(null, this);
+};
+
+Array.prototype.min = function() {
+	return Math.min.apply(null, this);
+};
+
+function AutoPlay(game) {
+	this.playingGame = game;
+	this.gameNumbers = game.numbers;
+	this.playInterval = null;
+}
+
+AutoPlay.prototype = {
+	autoPlay: function() {
+		this.playInterval = setInterval(() => {
+			this.play();
+		}, 600);
+	},
+	togglePlay: function() {
+		if (this.playInterval)
+			this.pausePlay();
+		else
+			this.autoPlay();
+	},
+	pausePlay: function() {
+		clearInterval(this.playInterval);
+		this.playInterval = null;
+	},
+	play: function() {
+		let e = $.extend(true, {}, FAKE_EVENT);
+		e.which = this.getBestMove();
+		if (e.which)
+			this.playingGame.onKeydown(e);
+		else {
+			alert("OH,NO。。。。。。。。");
+			this.togglePlay();
+		}
+
+	},
+	getBestMove: function() {
+		let result = [],
+			which = 37,
+			newNumbers = [];
+		for (let i = 0; i < 4; i++) {
+			let _a = this.ifMove(37 + i);
+			if (_a) {
+				//newNumbers.push(_a.resNumbers);
+				result.push(_a.weight);
+			} else {
+				result.push(0);
+			}
+		}
+		let theMax = result.max(),
+			newWhich = [];
+		for (let i in result) {
+			if (result[i] == theMax) {
+				//newWhich.push(i - 0);
+				which += (i - 0);
+				break
+			}
+		}
+		/*if (newWhich.length == 1)
+			which += newWhich[0];
+		else {
+			newNumbers
+		}*/
+		return which;
+	},
+	_getMaxValue: function(arr, result) {
+		let max = 0;
+		for (let i = arr.length - 1; i >= 0; i--) {
+			let _a = arr[i].max();
+			if (_a > max) max = _a;
+		}
+		result.push(max);
+	},
+	_getMaxValuePos: function(arr) {
+		let max = 0,
+			pos = [];
+		for (let i = 0; i < arr.length; i++) {
+			for (let j = 0; j < arr[i].length; j++) {
+				if (max < arr[i][j]) {
+					max = arr[i][j];
+					pos = [i, j]
+				}
+			}
+		}
+		return {
+			max: Math.log(max) / Math.log(2),
+			pos
+		}
+	},
+	_move: function(key) {
+		let move;
+		switch (key) {
+			case Keys.Left:
+				move = this.gameNumbers.moveLeft()
+				break
+			case Keys.Up:
+				move = this.gameNumbers.moveUp()
+				break
+			case Keys.Right:
+				move = this.gameNumbers.moveRight()
+				break
+			case Keys.Down:
+				move = this.gameNumbers.moveDown()
+				break
+		}
+		return move;
+	},
+	ifMove: function(key) {
+		let _res = null,
+			_numbers = this.gameNumbers.numbers,
+			_backNumbers = $.extend(true, [], this.gameNumbers.numbers),
+			move = this._move(key);
+		if (move && move.length > 0) { //&& this.willNextWorst(key)
+
+			/*
+			let maxPos = this._getMaxValuePos(this.gameNumbers.numbers),
+				_weight = 0;
+				if (axPos.max < 32)
+				_weight = (8 - maxPos.pos[0] - maxPos.pos[1]) * axPos.max;
+			else {
+				_weight += this.gameNumbers.numbers[0][1] * 3 + this.gameNumbers.numbers[0][2] * 2 this.gameNumbers.numbers[0][3]
+			}*/
+			_res = {
+				weight: this.getWight()
+			};
+		}
+		this.gameNumbers.numbers = _backNumbers;
+		return _res;
+	},
+	getWight() {
+		let nums = this.gameNumbers.numbers,
+			lt = nums[0][0] ? Math.log(nums[0][0]) / Math.log(2) : 0,
+			maxPos = this._getMaxValuePos(nums);
+
+		//for (let i = 0; i < nums.length; i++) {
+		//}
+		//第一列按从大到小排列[0,0]最大,第二列从大到小
+		let row = [],
+			lastVal;
+		for (let i = 0; i < 2; i++) {
+			let base = nums[0][i] ? Math.log(nums[0][i]) / Math.log(2) : 0;
+			for (let j = 1; j < nums[0].length; j++) {
+				let r = nums[j][0] ? Math.log(nums[j][0]) / Math.log(2) : 0;
+				if (!row.length)
+					row.push(i ? (r - base) : (base - r) * 3);
+				else
+					row.push(i ? (r - lastVal) * j : (lastVal - r) * (4 - j));
+				lastVal = r;
+			}
+		}
+		return maxPos.max * 3 + lt * 2 + row.reduce((a, b) => a + b);
+	},
+	getWight2() {
+		let nums = this.gameNumbers.numbers;
+		//left=>right
+		let l_r = 0,
+			r_l = 0;
+		for (let i = 0; i < nums.length; i++) {
+			for (let j = 0; j < nums[i].length; j++) {
+				if (nums[i][j] > 0 || j == nums[i].length - 1) {
+					let l = nums[i][0] ? Math.log(nums[i][0]) / Math.log(2) : 0,
+						r = nums[i][j] ? Math.log(nums[i][j]) / Math.log(2) : 0;
+					if (l > r) l_r += r - l;
+					else if (r > l) r_l += l - r;
+					break;
+				}
+			}
+		}
+		//up=>down
+		let u_d = 0,
+			d_u = 0;
+		for (let i = 0; i < nums.length; i++) {
+			for (let j = 0; j < nums[i].length; j++) {
+				if (nums[i][j] > 0 || j == nums[i].length - 1) {
+					let u = nums[0][j] ? Math.log(nums[0][j]) / Math.log(2) : 0,
+						d = nums[i][j] ? Math.log(nums[i][j]) / Math.log(2) : 0;
+					if (l > r) l_r += r - l;
+					else if (r > l) r_l += l - r;
+					break;
+				}
+			}
+		}
+	},
+	willNextWorst: function(key) {
+		let _backNumbers = $.extend(true, [], this.gameNumbers.numbers),
+			move = this._move(key),
+			_worst = true;
+
+		if (move && move.length > 0) {
+			if (this.ifMove(37) || this.ifMove(38))
+				_worst = false;
+		}
+		this.gameNumbers.numbers = _backNumbers;
+		return _worst;
+	}
+}
+module.exports = AutoPlay;
+},{"./keys":4}],3:[function(require,module,exports){
 var $ = require('jquery')
 var Keys = require('./keys')
 var Numbers = require('./numbers')
@@ -48,21 +276,21 @@ $.extend(Game.prototype, {
 
 	/* events */
 
-	on: function () {
+	on: function() {
 		this.$el.on.apply(this.$el, arguments)
 	},
-	off: function () {
+	off: function() {
 		this.$el.off.apply(this.$el, arguments)
 	},
-	trigger: function () {
+	trigger: function() {
 		this.$el.trigger.apply(this.$el, arguments)
 	},
 
-	initEvents: function () {
+	initEvents: function() {
 		$(document).on('keydown', $.proxy(this.onKeydown, this))
 	},
 
-	newRound: function () {
+	newRound: function() {
 		this.numbers = new Numbers();
 		this.moves = []
 
@@ -78,7 +306,7 @@ $.extend(Game.prototype, {
 	},
 
 	// TODO bug 不能正确检测游戏结束情况
-	isGameOver: function () {
+	isGameOver: function() {
 		// 检查无法继续合并的情况
 		if (!this.numbers.canMerge()) {
 			this.running = false;
@@ -86,7 +314,7 @@ $.extend(Game.prototype, {
 			this.trigger('gameOver')
 		}
 
-		this.numbers.forEach($.proxy(function (n) {
+		this.numbers.forEach($.proxy(function(n) {
 			if (n === 2048) {
 				this.running = false;
 				this.msgBox.show("Success! You got 2048!");
@@ -96,7 +324,7 @@ $.extend(Game.prototype, {
 		return !this.running
 	},
 
-	onKeydown: function (e) {
+	onKeydown: function(e) {
 		var key = e.which
 		if (!this.running || key < Keys.Left || key > Keys.Down) {
 			return;
@@ -131,7 +359,7 @@ $.extend(Game.prototype, {
 			this.showMove(move)
 
 			// 等待动画完成
-			this.actionTimer = setTimeout($.proxy(function () {
+			this.actionTimer = setTimeout($.proxy(function() {
 				this.actionTimer = null
 				if (!this.isGameOver()) {
 					this.trigger({
@@ -145,8 +373,8 @@ $.extend(Game.prototype, {
 		}
 	},
 
-	renderNumbers: function () {
-		this.numbers.forEach($.proxy(function (num, row, col) {
+	renderNumbers: function() {
+		this.numbers.forEach($.proxy(function(num, row, col) {
 			this.showNumber(row, col, num)
 		}, this))
 	},
@@ -154,13 +382,13 @@ $.extend(Game.prototype, {
 	/*
 	 * @param {Step[]} move - 由一系列的步骤组成的单次移动过程
 	 */
-	showMove: function (move) {
+	showMove: function(move) {
 		for (var i = 0, len = move.length; i < len; i++) {
 			this.showMoveStep(move[i]);
 		}
 	},
 
-	showMoveStep: function (step) {
+	showMoveStep: function(step) {
 		var game = this
 		var from = step.from
 		var to = step.to
@@ -173,35 +401,35 @@ $.extend(Game.prototype, {
 		this.$board.append($cellFromClone)
 		$cellFromClone.attr('data-row', to[0]).attr('data-col', to[1])
 
-		setTimeout(function () {
+		setTimeout(function() {
 			var result = step.result
 			game.updateCell($cellTo, result)
 			$cellFromClone.remove()
 		}, MOVE_ANIMATION_TIME)
 	},
 
-	showNumber: function (row, col, num) {
+	showNumber: function(row, col, num) {
 		this.updateCell(this.getCell(row, col), num)
 	},
 
-	updateCell: function ($cell, num) {
+	updateCell: function($cell, num) {
 		$cell.attr('num',
 				num === 0 ?
-					"no" :
-					num > 2048 ? "super" : num
+				"no" :
+				num > 2048 ? "super" : num
 			)
 			.find('i')
 			.text(num === 0 ? "" : num)
 	},
 
-	addRandomNumber: function () {
+	addRandomNumber: function() {
 		var pos = this.getCellPosition(this.getRandomFreeCell())
 		var num = this.getRandomNumber()
 		this.numbers.set(pos.row, pos.col, num)
 		this.showNumber(pos.row, pos.col, num)
 	},
 
-	getRandomFreeCell: function () {
+	getRandomFreeCell: function() {
 		// 空闲位置 num 属性为 no
 		var cells = this.$board.find('[num="no"]')
 		var count = cells.length
@@ -209,7 +437,7 @@ $.extend(Game.prototype, {
 		return cells.eq(rand)
 	},
 
-	getCellPosition: function ($cell) {
+	getCellPosition: function($cell) {
 		return {
 			row: parseInt($cell.attr("data-row"), 10),
 			col: parseInt($cell.attr("data-col"), 10)
@@ -217,48 +445,48 @@ $.extend(Game.prototype, {
 	},
 
 	// 随机数为 2 或 4
-	getRandomNumber: function () {
+	getRandomNumber: function() {
 		return Math.random() > 0.5 ? 2 : 4
 	},
 
-	getCell: function (row, col) {
+	getCell: function(row, col) {
 		return this.$board.find('.cell-' + row + '-' + col)
 	}
 })
 
 module.exports = Game
-},{"./keys":3,"./message-box":4,"./numbers":5,"jquery":"jquery"}],3:[function(require,module,exports){
+},{"./keys":4,"./message-box":5,"./numbers":6,"jquery":"jquery"}],4:[function(require,module,exports){
 module.exports = {
 	Left: 37,
 	Up: 38,
 	Right: 39,
 	Down: 40
 }
-},{}],4:[function(require,module,exports){
-var $ = require('jquery')
+},{}],5:[function(require,module,exports){
+var jQuery = require('jquery')
 
 function MessageBox(el) {
-	this.$el = $(el || '.game-message')
+	this.$el = jQuery(el || '.game-message')
 	var self = this
-	this.$el.on('click', function () {
+	this.$el.on('click', function() {
 		self.hide()
 	})
 }
 
-$.extend(MessageBox.prototype, {
+jQuery.extend(MessageBox.prototype, {
 
-	show: function (message) {
+	show: function(message) {
 		this.$el.text(message).show()
 	},
 
-	hide: function () {
+	hide: function() {
 		this.$el.hide()
 	}
 
 })
 
 module.exports = MessageBox
-},{"jquery":"jquery"}],5:[function(require,module,exports){
+},{"jquery":"jquery"}],6:[function(require,module,exports){
 var ROW_COUNT = 4
 var COL_COUNT = 4
 
