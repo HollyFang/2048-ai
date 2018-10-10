@@ -10,11 +10,12 @@ var FAKE_EVENT = {
 	preventDefault: () => {}
 };
 Array.prototype.max = function() {
-	return Math.max.apply(null, this);
-};
-
-Array.prototype.min = function() {
-	return Math.min.apply(null, this);
+	let _max;
+	this.forEach((a) => {
+		if (a !== null && (_max === undefined || a > _max))
+			_max = a;
+	});
+	return _max;
 };
 
 function AutoPlay(game) {
@@ -53,20 +54,21 @@ AutoPlay.prototype = {
 	getBestMove: function() {
 		let result = [],
 			which = 37,
-			newNumbers = [];
+			newNumbers = []; 
+		[null, 0, -32, null].max()
 		for (let i = 0; i < 4; i++) {
 			let _a = this.ifMove(37 + i);
 			if (_a) {
 				//newNumbers.push(_a.resNumbers);
 				result.push(_a.weight);
 			} else {
-				result.push(0);
+				result.push(null);
 			}
 		}
 		let theMax = result.max(),
 			newWhich = [];
 		for (let i in result) {
-			if (result[i] == theMax) {
+			if (result[i] === theMax) {
 				//newWhich.push(i - 0);
 				which += (i - 0);
 				break
@@ -79,13 +81,13 @@ AutoPlay.prototype = {
 		}*/
 		return which;
 	},
-	_getMaxValue: function(arr, result) {
+	_getMaxValue: function(arr) {
 		let max = 0;
 		for (let i = arr.length - 1; i >= 0; i--) {
 			let _a = arr[i].max();
 			if (_a > max) max = _a;
 		}
-		result.push(max);
+		return Math.log(max) / Math.log(2);
 	},
 	_getMaxValuePos: function(arr) {
 		let max = 0,
@@ -145,54 +147,30 @@ AutoPlay.prototype = {
 	},
 	getWight() {
 		let nums = this.gameNumbers.numbers,
-			lt = nums[0][0] ? Math.log(nums[0][0]) / Math.log(2) : 0,
-			maxPos = this._getMaxValuePos(nums);
+			max = this._getMaxValue(nums);
 
-		//for (let i = 0; i < nums.length; i++) {
-		//}
-		//第一列按从大到小排列[0,0]最大,第二列从大到小
-		let row = [],
-			lastVal;
-		//for (let i = 0; i < 2; i++) {
-		for (let j = 0; j < nums[0].length; j++) {
-			let r = nums[j][0] ? Math.log(nums[j][0]) / Math.log(2) : 0;
-			if (!row.length)
-				row.push(i ? (r - lastVal) * j : (lastVal - r) * (4 - j));
-			lastVal = r;
-		}
-		//}
-		return maxPos.max * 3 + lt * 2 + row.reduce((a, b) => a + b);
+		return max * 3 + this.gameNumbers.nullCellCount() - this.getJushi();
 	},
-	getWight2() {
-		let nums = this.gameNumbers.numbers;
-		//left=>right
-		let l_r = 0,
-			r_l = 0;
+	getJushi() {
+		let nums = this.gameNumbers.numbers,
+			jushi = 0;
 		for (let i = 0; i < nums.length; i++) {
+			let lastVal1 = null,
+				lastVal2 = null;
 			for (let j = 0; j < nums[i].length; j++) {
-				if (nums[i][j] > 0 || j == nums[i].length - 1) {
-					let l = nums[i][0] ? Math.log(nums[i][0]) / Math.log(2) : 0,
-						r = nums[i][j] ? Math.log(nums[i][j]) / Math.log(2) : 0;
-					if (l > r) l_r += r - l;
-					else if (r > l) r_l += l - r;
-					break;
+				let val1 = nums[i][j] ? Math.log(nums[i][j]) / Math.log(2) : 0,
+					val2 = nums[j][i] ? Math.log(nums[j][i]) / Math.log(2) : 0;
+				if (lastVal1 !== null) {
+					if (val1)
+						jushi += Math.abs(lastVal1 - val1);
+					if (val2)
+						jushi += Math.abs(lastVal2 - val2);
 				}
+				lastVal1 = val1;
+				lastVal2 = val2;
 			}
 		}
-		//up=>down
-		let u_d = 0,
-			d_u = 0;
-		for (let i = 0; i < nums.length; i++) {
-			for (let j = 0; j < nums[i].length; j++) {
-				if (nums[i][j] > 0 || j == nums[i].length - 1) {
-					let u = nums[0][j] ? Math.log(nums[0][j]) / Math.log(2) : 0,
-						d = nums[i][j] ? Math.log(nums[i][j]) / Math.log(2) : 0;
-					if (l > r) l_r += r - l;
-					else if (r > l) r_l += l - r;
-					break;
-				}
-			}
-		}
+		return jushi;
 	},
 	willNextWorst: function(key) {
 		let _backNumbers = $.extend(true, [], this.gameNumbers.numbers),
