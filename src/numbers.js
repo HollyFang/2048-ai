@@ -2,7 +2,12 @@ var ROW_COUNT = 4
 var COL_COUNT = 4
 
 function Numbers() {
-	this.numbers = [[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0]]
+	this.numbers = [
+		[0, 0, 0, 0],
+		[0, 0, 0, 0],
+		[0, 0, 0, 0],
+		[0, 0, 0, 0]
+	]
 	// 历次移动的过程记录
 	// TODO 利用记录的移动过程数据实现“撤销”、“重做”
 	this.moves = []
@@ -12,58 +17,62 @@ function Numbers() {
 
 Numbers.prototype = {
 
-	forEach: function (callback) {
+	forEach: function(callback) {
 		if (typeof callback !== 'function') return
-		this.numbers.forEach(function (row, rowIndex) {
-			row.forEach(function (number, colIndex) {
+		this.numbers.forEach(function(row, rowIndex) {
+			row.forEach(function(number, colIndex) {
 				callback(number, rowIndex, colIndex)
 			})
 		})
 	},
 
-	get: function (row, col) {
+	get: function(row, col) {
 		var row = this.numbers[row]
 		return row ? row[col] : null
 	},
-	set: function (row, col, n) {
+	set: function(row, col, n) {
 		if (row >= 0 && row < this.rowCount &&
 			col >= 0 && row < this.colCount) {
 			this.numbers[row][col] = n
 		}
 	},
 
-	moveLeft: function () {
+	moveLeft: function() {
 		return this.mergeRows('asc');
 	},
-	moveUp: function () {
+	moveUp: function() {
 		return this.mergeCols('asc');
 	},
-	moveRight: function () {
+	moveRight: function() {
 		return this.mergeRows('desc');
 	},
-	moveDown: function () {
+	moveDown: function() {
 		return this.mergeCols('desc');
 	},
 
-	mergeRows: function (order) {
+	mergeRows: function(order) {
 		var move = this.currentMove = []
 
 		for (var i = 0, len = this.rowCount; i < len; i++) {
 			this.mergeRow(i, order);
 		}
 
-		if (move.length > 0) { this.moves.push(move) }
+		if (move.length > 0) {
+			this.moves.push(move)
+		}
 		this.currentMove = null
 		return move
 	},
-	mergeCols: function (order) {
+	mergeCols: function(order) {
 		var move = this.currentMove = []
 
 		for (var i = 0, len = this.colCount; i < len; i++) {
 			this.mergeCol(i, order);
 		}
 
-		if (move.length > 0) { this.moves.push(move) }
+		if (move.length > 0) {
+			this.moves.push(move)
+		}
 		this.currentMove = null
 		return move
 	},
@@ -71,7 +80,7 @@ Numbers.prototype = {
 	/*
 	 * 任意 cell 值为 0，或与相邻 cell 值相等即可以合并
 	 */
-	canMerge: function () {
+	canMerge: function() {
 		var numbers = this.numbers
 		var num
 		var rowCount = this.rowCount
@@ -100,7 +109,7 @@ Numbers.prototype = {
 	/*
 	 * @param {'asc'|'desc'} order - 'asc' 从小往大; 'desc' 从大往小
 	 */
-	mergeRow: function (row, order) {
+	mergeRow: function(row, order) {
 		var colX = this.colCount
 		var col1
 		var col2
@@ -126,7 +135,7 @@ Numbers.prototype = {
 			}
 		}
 	},
-	mergeCol: function (col, order) {
+	mergeCol: function(col, order) {
 		var rowX = this.rowCount
 		var row1
 		var row2
@@ -159,7 +168,7 @@ Numbers.prototype = {
 	 * 返回在经过操作后值为 0 可以用作后续 cell 合并目标的 cell 坐标
 	 * @return {[{number} row, {number} col] | null}
 	 */
-	mergeCell: function (row1, col1, row2, col2) {
+	mergeCell: function(row1, col1, row2, col2) {
 		var num1 = this.numbers[row1][col1]
 		var num2 = this.numbers[row2][col2]
 
@@ -253,12 +262,21 @@ Numbers.prototype = {
 	/*
 	 * @param {Step} step - {from: [row2, col2, num2], to: [row1, col1, num1]}
 	 */
-	moveCell: function (step) {
+	moveCell: function(step) {
 		var from = step.from
 		var to = step.to
 		this.currentMove.push(step)
-		this.numbers[ from[0] ][ from[1] ] = 0
-		this.numbers[ to[0] ][ to[1] ] = step.result
+		this.numbers[from[0]][from[1]] = 0
+		this.numbers[to[0]][to[1]] = step.result
+	},
+	nullCellCount: function() {
+		let cnt = 0;
+		this.numbers.forEach(function(row, rowIndex) {
+			row.forEach(function(number, colIndex) {
+				if (!number) cnt++;
+			})
+		});
+		return cnt;
 	}
 }
 
