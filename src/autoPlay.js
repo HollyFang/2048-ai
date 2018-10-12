@@ -9,10 +9,11 @@ var FAKE_EVENT = {
 	which: null,
 	preventDefault: () => {}
 };
-Array.prototype.max = function() {
-	let _max;
+Array.prototype.getMaxExcept = function(exp) {
+	let _max, arr = [null];
+	if (exp !== undefined) arr = arr.concat(exp);
 	this.forEach((a) => {
-		if (a !== null && (_max === undefined || a > _max))
+		if (!arr.includes(a) && (_max === undefined || a > _max))
 			_max = a;
 	});
 	return _max;
@@ -55,7 +56,7 @@ AutoPlay.prototype = {
 		let result = [],
 			which = 37,
 			newNumbers = []; 
-		[null, 0, -32, null].max()
+		[null, 0, -32, null].getMaxExcept(0)
 		for (let i = 0; i < 4; i++) {
 			let _a = this.ifMove(37 + i);
 			if (_a) {
@@ -65,7 +66,7 @@ AutoPlay.prototype = {
 				result.push(null);
 			}
 		}
-		let theMax = result.max(),
+		let theMax = result.getMaxExcept(),
 			newWhich = [];
 		for (let i in result) {
 			if (result[i] === theMax) {
@@ -81,10 +82,10 @@ AutoPlay.prototype = {
 		}*/
 		return which;
 	},
-	_getMaxValue: function(arr) {
+	_getMaxValueExcept: function(arr, exp) {
 		let max = 0;
 		for (let i = arr.length - 1; i >= 0; i--) {
-			let _a = arr[i].max();
+			let _a = arr[i].getMaxExcept(exp);
 			if (_a > max) max = _a;
 		}
 		return Math.log(max) / Math.log(2);
@@ -147,9 +148,10 @@ AutoPlay.prototype = {
 	},
 	getWight() {
 		let nums = this.gameNumbers.numbers,
-			max = this._getMaxValue(nums);
+			max = this._getMaxValueExcept(nums),
+			max2 = this._getMaxValueExcept(nums, max);
 
-		return max * 3 + this.gameNumbers.nullCellCount() - this.getJushi();
+		return max * 3 + max2 * 2 + this.gameNumbers.nullCellCount() * 2 - this.getJushi();
 	},
 	getJushi() {
 		let nums = this.gameNumbers.numbers,

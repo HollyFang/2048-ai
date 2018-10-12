@@ -1,6 +1,8 @@
+require('babel-polyfill')
 var $ = require('jquery')
 var Game = require('./game')
 var Auto = require('./autoPlay')
+var AI = require('./ai-b')
 
 $(function() {
 	var game = new Game()
@@ -10,7 +12,6 @@ $(function() {
 	$('body').on('click', '.new-round', function() {
 		game.newRound()
 	})
-
 	game.on('move', function(e) {
 		$moves.text(e.moves.length)
 	})
@@ -20,14 +21,33 @@ $(function() {
 	})
 
 	game.newRound();
+
 	var auto = new Auto(game);
-	auto.autoPlay();
 	$toggle.on('click', function() {
 		auto.togglePlay();
 	})
 	game.on('gameOver', function() {
 		auto.pausePlay();
 	})
+
+
+	var ai = new AI(game);
+	$('body').on('click', '#record', function() {
+		ai.record(1);
+	})
+	$('body').on('click', '#recordBad', function() {
+		ai.record(0);
+	})
+	$('body').on('click', '#recordOK', function() {
+		ai.record(0.5);
+	})
+	$('body').on('click', '#buildModel', function() {
+		ai.buildModel();
+	})
+	$('body').on('click', '#predict', function() {
+		ai.predict();
+	})
+
 })
 
 if (location.protocol.indexOf('http') > -1 && 'serviceWorker' in navigator) {

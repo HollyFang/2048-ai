@@ -112,6 +112,8 @@ $.extend(Game.prototype, {
 				}
 			}, this), MOVE_ANIMATION_TIME);
 		}
+
+		this.trigger('moveOver')
 	},
 
 	renderNumbers: function() {

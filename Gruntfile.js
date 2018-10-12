@@ -14,6 +14,20 @@ module.exports = function(grunt) {
         dest: 'app/app.css'
       }
     },
+    babel: {
+      options: {
+        sourceMap: false,
+        presets: ['env']
+
+      },
+      dist: {
+        files: [{
+          expand: false,
+          src: ['src/ai.js'], //所有js文件
+          dest: 'src/ai-b.js' //输出到此目录下
+        }]
+      }
+    },
     browserify: {
       build: {
         options: {
@@ -30,7 +44,9 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch')
   grunt.loadNpmTasks('grunt-contrib-less')
   grunt.loadNpmTasks('grunt-browserify')
+  grunt.loadNpmTasks('grunt-babel');
 
-  grunt.registerTask('build', ['less', 'browserify'])
+  grunt.registerTask('build', ['babel', 'browserify'])
   grunt.registerTask('default', ['build'])
+  //grunt.registerTask('default', ['watch']);
 }
