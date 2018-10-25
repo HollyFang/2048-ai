@@ -38,8 +38,8 @@ $(function() {
 	$('body').on('click', '#recordBad', function() {
 		ai.record(0);
 	})
-	$('body').on('click', '#recordOK', function() {
-		ai.record(0.5);
+	$('body').on('click', '#notRecord', function() {
+		ai.notRecord();
 	})
 	$('body').on('click', '#buildModel', function() {
 		ai.buildModel();
