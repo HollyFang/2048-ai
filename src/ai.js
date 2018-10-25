@@ -1,5 +1,7 @@
 //import * as tf from '@tensorflow/tfjs';
-var tf = require('@tensorflow/tfjs')
+var tf = require('@tensorflow/tfjs');
+const good = require('../data/good.js');
+const bad = require('../data/bad.js');
 
 function AI(game) {
 	this.playingGame = game;
@@ -8,8 +10,11 @@ function AI(game) {
 	this.result = [];
 	const model = tf.sequential();
 	this.model = model;
+	/*model.add(tf.layers.dropout({
+		rate: 0.5
+	}));*/
 	model.add(tf.layers.dense({
-		units: 1,
+		units: 2,
 		inputShape: [16],
 		activation: 'sigmoid'
 	}));
@@ -60,7 +65,8 @@ AI.prototype = {
 			valUp = this.predictDirection(1),
 			valRight = this.predictDirection(2),
 			valDown = this.predictDirection(3);
-		console.log(valLeft, valUp, valRight, valDown);
+
+		$("#predict-results").html(`left:${valLeft};<br />up:${valUp};<br />right:${valRight};<br />down:${valDown};`);
 		debugger;
 	},
 	predictDirection: function(direct) {
@@ -92,18 +98,23 @@ AI.prototype = {
 		return move;
 	},
 	buildModel: async function() {
-		//this.dataset = "0,0,0,2,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,2,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,2,0,0,2,1,0,0,0,0,0,0,0,0,0,0,2,2,0,0,2,1,0,0,0,0,0,0,0,0,0,0,2,3,0,0,2,1,0,0,0,0,0,0,0,0,2,0,3,3,0,0,0,1,0,0,0,0,0,0,0,0,0,0,2,4,0,0,0,1,0,0,0,0,0,0,0,2,2,0,2,4,0,0,0,1,0,0,0,2,0,0,0,0,0,0,3,4,0,0,0,1,0,0,0,3,0,0,0,0,0,0,3,4,0,0,0,1,0,0,2,3,0,0,0,0,0,1,3,4,0,0,2,1,0,0,0,3,0,0,0,0,0,1,3,4,0,0,2,1,0,0,0,3,0,0,0,1,0,1,3,4,0,2,2,1,0,0,0,3,0,0,0,1,0,1,3,4,0,1,3,1,0,0,0,3,0,0,0,1,1,2,4,4,0,0,0,1,0,0,0,3,0,0,0,1,0,1,2,5,0,0,0,1,0,0,2,3,0,0,0,1,1,1,3,5,0,0,0,1,0,0,0,3,0,0,0,1,0,2,3,5,0,0,2,1,0,0,0,3,0,0,0,1,2,3,5,0,2,1,0,0,1,3,0,0,1,0,0,0,0,2,3,5,0,2,1,2,0,0,1,3,0,0,0,1,0,3,3,5,0,0,2,2,0,0,2,3,0,0,0,1,0,1,4,5,0,0,0,3,0,0,2,3,0,0,0,1,1,1,4,5,0,0,2,4,0,0,0,1,0,0,0,0,0,2,4,5,0,0,2,4,0,0,0,1,0,0,0,2,2,2,4,5,0,0,2,4,0,0,0,1,0,0,0,2,2,3,4,5,0,0,2,4,0,0,0,1,0,0,0,2,2,3,4,5,0,0,3,4,0,0,0,1,0,0,0,2,2,3,4,5,1,3,4,0,1,0,0,0,2,0,0,0,2,4,5,5,2,0,0,2,2,0,0,0,0,0,0,0,0,2,4,6,0,0,0,3,0,0,0,3,0,0,0,0,0,3,4,6,0,0,0,4,0,0,0,0,0,0,0,0,1,3,4,6,0,0,0,4,0,0,0,0,0,0,0,0,1,3,4,6,4,0,0,0,2,0,0,0,0,0,0,0,1,3,4,6,0,0,0,4,0,0,0,3,0,0,0,0,1,3,4,6,0,0,1,4,0,0,0,3,0,0,0,0,1,3,4,6,0,0,2,4,0,0,0,3,0,0,0,0,2,3,4,6,0,0,2,4,0,0,0,3,0,0,0,0,2,3,4,6,1,0,2,4,0,0,0,3,0,0,0,0,2,3,4,6,0,1,2,4,0,0,1,3,0,0,0,0,2,3,4,6,0,1,2,4,0,0,2,3,0,0,0,0,3,3,4,6,0,1,3,4,0,0,0,3,0,0,0,0,0,4,4,6,0,1,3,4,0,0,2,3,0,0,0,0,0,0,5,6,0,1,3,4,0,0,2,3,0,0,0,2,0,1,5,6,0,1,3,4,0,0,2,3,0,0,0,2,0,2,5,6,0,0,3,4,0,0,3,3,0,0,0,2,2,2,5,6,0,0,4,4,0,0,0,3,0,0,0,2,0,3,5,6,0,0,0,5,0,0,0,3,0,0,0,3,0,3,5,6,0,1,0,5,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,6,0,3,5,5,0,1,2,4,2,0,0,0,6,0,0,0,3,6,0,0,1,2,4,0,0,0,0,2,0,0,6,1,0,0,3,6,0,1,2,4,0,2,6,2,0,1,3,1,0,0,2,6,0,0,0,4,0,0,0,2,0,0,6,1,0,2,3,6,2,1,2,4,0,0,0,2,0,1,6,1,0,2,3,6,2,1,2,4,3,1,6,2,0,2,3,1,0,1,2,6,0,0,0,4,3,1,6,2,1,2,3,1,1,2,6,0,4,0,0,0,3,1,6,2,1,2,3,1,0,1,2,6,0,0,4,2,0,0,6,2,3,1,3,1,1,2,2,6,2,1,4,2,0,1,6,2,3,1,3,1,0,1,3,6,2,1,4,2,0,0,0,2,1,0,6,1,3,2,4,6,2,2,4,2,0,0,0,2,1,0,0,1,3,2,6,6,2,3,5,2,0,0,0,2,0,0,1,2,0,3,2,7,2,3,5,2".split(',');
-		//this.result = "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0".split(',');
-		/*let pos = tf.ones([48, 1]),
-			nag = tf.zeros([14, 1]);
-		this.result = tf.concat([pos, nag]); // pos.concat(nag);*/
 		this.notRecord();
+		let _goodArr = good.split(','),
+			_badArr = bad.split(',');
+		this.dataset = _goodArr.concat(_badArr);
+		this.result = [];
+		for (var i = _goodArr.length / 16 - 1; i >= 0; i--) {
+			this.result.push(1);
+		};
+		for (var i = _badArr.length / 16 - 1; i >= 0; i--) {
+			this.result.push(0);
+		};
 		const LEARNING_RATE = 0.15;
 		const optimizer = tf.train.sgd(LEARNING_RATE);
 		const dataLen = this.dataset.length / 16;
 		this.model.compile({
 			optimizer: optimizer,
-			loss: 'binaryCrossentropy', //'categoricalCrossentropy', //  'sparseCategoricalCrossentropy',
+			loss: 'binaryCrossentropy', //'binaryCrossentropy', //  'sparseCategoricalCrossentropy',
 			metrics: ['accuracy']
 		});
 		let trainBatchCount = 0,
@@ -111,7 +122,7 @@ AI.prototype = {
 			_labels = new Uint8Array(this.result);
 
 		await this.model.fit(
-			tf.tensor2d(_dataset, [dataLen, 16]), tf.tensor2d(_labels, [dataLen, 1]), { //tf.tensor2d(_labels, [dataLen, 1])
+			tf.tensor2d(_dataset, [dataLen, 16]), tf.tensor2d(_labels, [dataLen, 1]), { //tf.tensor2d(_labels, [dataLen, 1]) .expandDims(-1)
 				batchSize: 6,
 				epochs: 1,
 				callbacks: {

@@ -22,13 +22,6 @@ $(function() {
 
 	game.newRound();
 
-	var auto = new Auto(game);
-	$toggle.on('click', function() {
-		auto.togglePlay();
-	})
-	game.on('gameOver', function() {
-		auto.pausePlay();
-	})
 
 
 	var ai = new AI(game);
@@ -48,6 +41,13 @@ $(function() {
 		ai.predict();
 	})
 
+	var auto = new Auto(game, ai);
+	$toggle.on('click', function() {
+		auto.togglePlay();
+	})
+	game.on('gameOver', function() {
+		auto.pausePlay();
+	})
 })
 
 if (location.protocol.indexOf('http') > -1 && 'serviceWorker' in navigator) {

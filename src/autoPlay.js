@@ -19,10 +19,11 @@ Array.prototype.getMaxExcept = function(exp) {
 	return _max;
 };
 
-function AutoPlay(game) {
+function AutoPlay(game, ai) {
 	this.playingGame = game;
 	this.gameNumbers = game.numbers;
 	this.playInterval = null;
+	this.ai = ai;
 }
 
 AutoPlay.prototype = {
@@ -60,8 +61,7 @@ AutoPlay.prototype = {
 		for (let i = 0; i < 4; i++) {
 			let _a = this.ifMove(37 + i);
 			if (_a) {
-				//newNumbers.push(_a.resNumbers);
-				result.push(_a.weight);
+				result.push(this.ai.predictDirection(i));
 			} else {
 				result.push(null);
 			}
@@ -70,16 +70,11 @@ AutoPlay.prototype = {
 			newWhich = [];
 		for (let i in result) {
 			if (result[i] === theMax) {
-				//newWhich.push(i - 0);
 				which += (i - 0);
 				break
 			}
 		}
-		/*if (newWhich.length == 1)
-			which += newWhich[0];
-		else {
-			newNumbers
-		}*/
+
 		return which;
 	},
 	_getMaxValueExcept: function(arr, exp) {
