@@ -22,6 +22,7 @@ AI.prototype = {
 			let arrs = this.getNumberArray(this.gameNumbers.numbers);
 			//this.dataset.push(new Float32Array(arrs2));
 			this.dataset = this.dataset.concat(arrs);
+			$('#record-datas').html(arrs.join(','));
 			this.result.push(type);
 		})
 	},
@@ -30,17 +31,16 @@ AI.prototype = {
 	},
 	getNumberArray: function(arr) {
 		let arrs = arr[0].concat(arr[1]).concat(arr[2]).concat(arr[3]);
-
 		return arrs.map((data) => {
 			if (data) return Math.log(data) / Math.log(2);
 			else return data;
 		});
 	},
 	predict: function() {
-		let valLeft = predictDirection(0),
-			valUp = predictDirection(1),
-			valRight = predictDirection(2),
-			valDown = predictDirection(3);
+		let valLeft = this.predictDirection(0),
+			valUp = this.predictDirection(1),
+			valRight = this.predictDirection(2),
+			valDown = this.predictDirection(3);
 		console.log(valLeft, valUp, valRight, valDown);
 		debugger;
 	},
@@ -90,7 +90,7 @@ AI.prototype = {
 		let trainBatchCount = 0,
 			_dataset = new Float32Array(this.dataset),
 			_labels = new Uint8Array(this.result);
-		$('#record-datas').html(_dataset.join(',') + "\r\n" + _labels.join(','));
+
 		await this.model.fit(
 			tf.tensor2d(_dataset, [dataLen, 16]), tf.tensor2d(_labels, [dataLen, 1]), { //tf.tensor2d(_labels, [dataLen, 1])
 				batchSize: 6,

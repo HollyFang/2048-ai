@@ -189,7 +189,7 @@ $.extend(Game.prototype, {
 
 	// 随机数为 2 或 4
 	getRandomNumber: function() {
-		return Math.random() > 0.5 ? 2 : 4
+		return Math.random() > 0.1 ? 2 : 4
 	},
 
 	getCell: function(row, col) {
