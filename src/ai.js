@@ -20,11 +20,30 @@ AI.prototype = {
 		this.notRecord();
 		this.playingGame.on('moveOver', () => {
 			let arrs = this.getNumberArray(this.gameNumbers.numbers);
-			//this.dataset.push(new Float32Array(arrs2));
+			let a = this.rotate(this.gameNumbers.numbers);
+			let b = this.rotate(a);
+			let c = this.rotate(b);
 			this.dataset = this.dataset.concat(arrs);
-			$('#record-datas').html(arrs.join(','));
+			let str = arrs.join(',') + "\r\n" + this.getNumberArray(a).join(',') +
+				"\r\n" + this.getNumberArray(b).join(',') + "\r\n" + this.getNumberArray(c).join(',');
+			$('#record-datas').html(str);
 			this.result.push(type);
 		})
+	},
+	rotate: function(arr) {
+		let dst = arr.length - 1,
+			COL = arr[0].length,
+			ROW = arr.length,
+			tmp = [];
+		//顺时针旋转矩阵90度
+		for (let i = 0; i < ROW; i++) {
+			for (let j = 0; j < COL; j++) {
+				if (!tmp[j]) tmp[j] = [];
+				tmp[j][dst] = arr[i][j];
+			}
+			dst--;
+		}
+		return tmp;
 	},
 	notRecord: function() {
 		this.playingGame.off('moveOver');
