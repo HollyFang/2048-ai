@@ -36,7 +36,7 @@ AI.prototype = {
 			else return data;
 		});
 	},
-	predic: function() {
+	predict: function() {
 		let valLeft = predictDirection(0),
 			valUp = predictDirection(1),
 			valRight = predictDirection(2),

@@ -41,7 +41,7 @@ AI.prototype = {
 			if (data) return Math.log(data) / Math.log(2);else return data;
 		});
 	},
-	predic: function predic() {
+	predict: function predict() {
 		var valLeft = predictDirection(0),
 		    valUp = predictDirection(1),
 		    valRight = predictDirection(2),
