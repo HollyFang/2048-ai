@@ -13,11 +13,11 @@
 		<button class="new-round">New Round</button>
 		<div class="game-moves"></div>
 		<button id="toggle">暂停/开始</button>
-		<button id="record">记录好的</button>
+		<button id="predict">预测</button>
+		<!-- <button id="record">记录好的</button>
 		<button id="recordBad">记录坏的</button>
 		<button id="notRecord">不记录</button>
-		<button id="buildModel">建模</button>
-		<button id="predict">预测</button>
+		<button id="buildModel">建模</button> -->
 	</div>
 	<p class="game-message"></p>
 	<div class="game-2048-board">
@@ -42,7 +42,47 @@
 		<div data-row="3" data-col="3" class="cell cell-3-3"><i></i></div>
 	</div>
 </div>
-<div id="record-datas"></div>
+<div id="record-datas" style="text-align: center; margin-top: 10px; padding:10px;">
+	<div class="game-cmds">
+		<button id="record">记录</button>
+		<button id="buildModel">建模</button>
+		<button id="aiPredict">AI预测</button>
+	</div>
+	<br/>
+	向左：
+	<input type="text" name="Max_37" id="Max_37" value="">
+	<input type="text" name="Max2_37" id="Max2_37" value="">
+	<input type="text" name="Null_37" id="Null_37" value="">
+	<input type="text" name="Jushi_37" id="Jushi_37" value="">
+	评分：<input type="text" name="score_37" id="score_37" value="">
+	AI评分：<input type="text" name="aiScore_37" id="aiScore_37" value="">
+	<br/>
+	向上：
+	<input type="text" name="Max_38" id="Max_38" value="">
+	<input type="text" name="Max2_38" id="Max2_38" value="">
+	<input type="text" name="Null_38" id="Null_38" value="">
+	<input type="text" name="Jushi_38" id="Jushi_38" value="">
+	评分：<input type="text" name="score_38" id="score_38" value="">
+	AI评分：<input type="text" name="aiScore_38" id="aiScore_38" value="">
+	<br/>
+	向右：
+	<input type="text" name="Max_39" id="Max_39" value="">
+	<input type="text" name="Max2_39" id="Max2_39" value="">
+	<input type="text" name="Null_39" id="Null_39" value="">
+	<input type="text" name="Jushi_39" id="Jushi_39" value="">
+	评分：<input type="text" name="score_39" id="score_39" value="">
+	AI评分：<input type="text" name="aiScore_39" id="aiScore_39" value="">
+	<br/>
+	向下：
+	<input type="text" name="Max_40" id="Max_40" value="">
+	<input type="text" name="Max2_40" id="Max2_40" value="">
+	<input type="text" name="Null_40" id="Null_40" value="">
+	<input type="text" name="Jushi_40" id="Jushi_40" value="">
+	评分：<input type="text" name="score_40" id="score_40" value="">
+	AI评分：<input type="text" name="aiScore_40" id="aiScore_40" value="">
+	<br/>
+	
+</div>
 <div id="record-datas1"></div>
 <div id="predict-results"></div>
 

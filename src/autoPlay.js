@@ -19,11 +19,10 @@ Array.prototype.getMaxExcept = function(exp) {
 	return _max;
 };
 
-function AutoPlay(game, ai) {
+function AutoPlay(game) {
 	this.playingGame = game;
 	this.gameNumbers = game.numbers;
 	this.playInterval = null;
-	this.ai = ai;
 }
 
 AutoPlay.prototype = {
@@ -57,13 +56,17 @@ AutoPlay.prototype = {
 		let result = [],
 			which = 37,
 			newNumbers = []; 
-		[null, 0, -32, null].getMaxExcept(0)
 		for (let i = 0; i < 4; i++) {
-			let _a = this.ifMove(37 + i);
+			let key = 37 + i;
+			let _a = this.ifMove(key);
 			if (_a) {
-				result.push(this.ai.predictDirection(i));
+				result.push(_a.weight); //this.ai.predictDirection(i));
 			} else {
 				result.push(null);
+				$('#Max_' + key).val("");
+				$('#Max2_' + key).val("");
+				$('#Null_' + key).val("");
+				$('#Jushi_' + key).val("");
 			}
 		}
 		let theMax = result.getMaxExcept(),
@@ -135,18 +138,24 @@ AutoPlay.prototype = {
 				_weight += this.gameNumbers.numbers[0][1] * 3 + this.gameNumbers.numbers[0][2] * 2 this.gameNumbers.numbers[0][3]
 			}*/
 			_res = {
-				weight: this.getWight()
+				weight: this.getWight(key)
 			};
 		}
 		this.gameNumbers.numbers = _backNumbers;
 		return _res;
 	},
-	getWight() {
+	getWight(key) {
 		let nums = this.gameNumbers.numbers,
 			max = this._getMaxValueExcept(nums),
-			max2 = this._getMaxValueExcept(nums, max);
-
-		return max * 3 + max2 * 2 + this.gameNumbers.nullCellCount() * 2 - this.getJushi();
+			max2 = this._getMaxValueExcept(nums, max),
+			nullCellCount = this.gameNumbers.nullCellCount(),
+			jushi = this.getJushi();
+		$('#Max_' + key).val(max);
+		$('#Max2_' + key).val(max2);
+		$('#Null_' + key).val(nullCellCount);
+		$('#Jushi_' + key).val(jushi);
+		//$('#record-datas').html($('#record-datas').html() + '\r\n' + `${key} ---> max:${max},max2:${max2},nullCellCount:${nullCellCount},jushi:${jushi}`);
+		return max * 3 + nullCellCount * 2 + max2 - jushi;
 	},
 	getJushi() {
 		let nums = this.gameNumbers.numbers,
