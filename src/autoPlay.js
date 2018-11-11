@@ -10,10 +10,14 @@ var FAKE_EVENT = {
 	which: null,
 	preventDefault: () => {}
 };
-Array.prototype.max = function() {
-	let _max;
+
+var INTERVAL=500;
+
+Array.prototype.getMaxExcept = function(exp) {
+	let _max, arr = [null];
+	if (exp !== undefined) arr = arr.concat(exp);
 	this.forEach((a) => {
-		if (a !== null && (_max === undefined || a > _max))
+		if (!arr.includes(a) && (_max === undefined || a > _max))
 			_max = a;
 	});
 	return _max;
@@ -29,7 +33,7 @@ AutoPlay.prototype = {
 	autoPlay: function() {
 		this.playInterval = setInterval(() => {
 			this.play();
-		}, 600);
+		}, INTERVAL);
 	},
 	togglePlay: function() {
 		if (this.playInterval)
@@ -68,7 +72,7 @@ AutoPlay.prototype = {
 				result.push(null);
 			}
 		}
-		let theMax = result.max();
+		let theMax = result.getMaxExcept();
 		for (let i in result) {
 			if (result[i] === theMax) {
 				which += (i - 0);
@@ -77,10 +81,10 @@ AutoPlay.prototype = {
 		}
 		return {which,value:theMax};
 	},
-	_getMaxValue: function(arr) {
+	_getMaxValueExcept: function(arr, exp) {
 		let max = 0;
 		for (let i = arr.length - 1; i >= 0; i--) {
-			let _a = arr[i].max();
+			let _a = arr[i].getMaxExcept(exp);
 			if (_a > max) max = _a;
 		}
 		return Math.log(max) / Math.log(2);
@@ -137,9 +141,10 @@ AutoPlay.prototype = {
 		return _res;
 	},
 	getWight: function(nums) {
-		let max = this._getMaxValue(nums.numbers);
+		let max = this._getMaxValueExcept(nums.numbers),
+			max2 = this._getMaxValueExcept(nums.numbers, max);
 
-		return max * 3 + this.nullCellCount(nums) - this.getJushi();
+		return max * 3 +this.nullCellCount(nums) - this.getJushi()*1.5;
 	},
 	nullCellCount: function(nums) {
 		let cnt = 0;
