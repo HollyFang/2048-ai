@@ -44,6 +44,7 @@ if (location.protocol.indexOf('http') > -1 && 'serviceWorker' in navigator) {
 }
 },{"./autoPlay":2,"./game":3,"jquery":"jquery"}],2:[function(require,module,exports){
 var Keys = require('./keys')
+var Numbers = require('./numbers')
 var PREFER_DIRECT = {
 	left: 1,
 	up: 1,
@@ -55,11 +56,12 @@ var FAKE_EVENT = {
 	preventDefault: () => {}
 };
 Array.prototype.max = function() {
-	return Math.max.apply(null, this);
-};
-
-Array.prototype.min = function() {
-	return Math.min.apply(null, this);
+	let _max;
+	this.forEach((a) => {
+		if (a !== null && (_max === undefined || a > _max))
+			_max = a;
+	});
+	return _max;
 };
 
 function AutoPlay(game) {
@@ -85,8 +87,9 @@ AutoPlay.prototype = {
 		this.playInterval = null;
 	},
 	play: function() {
-		let e = $.extend(true, {}, FAKE_EVENT);
-		e.which = this.getBestMove();
+		let e = $.extend(true, {}, FAKE_EVENT),
+		_move= this.getBestMove();
+		e.which =_move.which;
 		if (e.which)
 			this.playingGame.onKeydown(e);
 		else {
@@ -95,42 +98,37 @@ AutoPlay.prototype = {
 		}
 
 	},
-	getBestMove: function() {
+	getBestMove: function(times,nums) {
 		let result = [],
 			which = 37,
 			newNumbers = [];
+			times=times===undefined?1:times; 
 		for (let i = 0; i < 4; i++) {
-			let _a = this.ifMove(37 + i);
+			let _a = this.ifMove(37 + i,nums,times);
 			if (_a) {
-				//newNumbers.push(_a.resNumbers);
-				result.push(_a.weight);
+				//let obj={};
+				//obj[37 + i]=_a.weight2||_a.weight;
+				result.push(_a.weight2||_a.weight);
 			} else {
-				result.push(0);
+				result.push(null);
 			}
 		}
-		let theMax = result.max(),
-			newWhich = [];
+		let theMax = result.max();
 		for (let i in result) {
-			if (result[i] == theMax) {
-				//newWhich.push(i - 0);
+			if (result[i] === theMax) {
 				which += (i - 0);
 				break
 			}
 		}
-		/*if (newWhich.length == 1)
-			which += newWhich[0];
-		else {
-			newNumbers
-		}*/
-		return which;
+		return {which,value:theMax};
 	},
-	_getMaxValue: function(arr, result) {
+	_getMaxValue: function(arr) {
 		let max = 0;
 		for (let i = arr.length - 1; i >= 0; i--) {
 			let _a = arr[i].max();
 			if (_a > max) max = _a;
 		}
-		result.push(max);
+		return Math.log(max) / Math.log(2);
 	},
 	_getMaxValuePos: function(arr) {
 		let max = 0,
@@ -148,99 +146,75 @@ AutoPlay.prototype = {
 			pos
 		}
 	},
-	_move: function(key) {
+	_move: function(key,nums) {
 		let move;
 		switch (key) {
 			case Keys.Left:
-				move = this.gameNumbers.moveLeft()
+				move = nums.moveLeft()
 				break
 			case Keys.Up:
-				move = this.gameNumbers.moveUp()
+				move = nums.moveUp()
 				break
 			case Keys.Right:
-				move = this.gameNumbers.moveRight()
+				move = nums.moveRight()
 				break
 			case Keys.Down:
-				move = this.gameNumbers.moveDown()
+				move = nums.moveDown()
 				break
 		}
 		return move;
 	},
-	ifMove: function(key) {
+	ifMove: function(key,nums,times) {
+		nums=nums||this.gameNumbers.numbers;
 		let _res = null,
-			_numbers = this.gameNumbers.numbers,
-			_backNumbers = $.extend(true, [], this.gameNumbers.numbers),
-			move = this._move(key);
-		if (move && move.length > 0) { //&& this.willNextWorst(key)
-
-			/*
-			let maxPos = this._getMaxValuePos(this.gameNumbers.numbers),
-				_weight = 0;
-				if (axPos.max < 32)
-				_weight = (8 - maxPos.pos[0] - maxPos.pos[1]) * axPos.max;
-			else {
-				_weight += this.gameNumbers.numbers[0][1] * 3 + this.gameNumbers.numbers[0][2] * 2 this.gameNumbers.numbers[0][3]
-			}*/
+			_backNumbers = $.extend(true, [], nums);
+		let calNums=new Numbers(_backNumbers),
+			move = this._move(key,calNums);
+		if (move && move.length > 0) {
 			_res = {
-				weight: this.getWight()
+				weight: this.getWight(calNums)
 			};
+			if(times>0){
+				let cal2=this.getBestMove(times-1,calNums.numbers);
+				_res.weight2=cal2.value;
+			}
 		}
-		this.gameNumbers.numbers = _backNumbers;
 		return _res;
 	},
-	getWight() {
-		let nums = this.gameNumbers.numbers,
-			lt = nums[0][0] ? Math.log(nums[0][0]) / Math.log(2) : 0,
-			maxPos = this._getMaxValuePos(nums);
+	getWight: function(nums) {
+		let max = this._getMaxValue(nums.numbers);
 
-		//for (let i = 0; i < nums.length; i++) {
-		//}
-		//第一列按从大到小排列[0,0]最大,第二列从大到小
-		let row = [],
-			lastVal;
-		for (let i = 0; i < 2; i++) {
-			let base = nums[0][i] ? Math.log(nums[0][i]) / Math.log(2) : 0;
-			for (let j = 1; j < nums[0].length; j++) {
-				let r = nums[j][0] ? Math.log(nums[j][0]) / Math.log(2) : 0;
-				if (!row.length)
-					row.push(i ? (r - base) : (base - r) * 3);
-				else
-					row.push(i ? (r - lastVal) * j : (lastVal - r) * (4 - j));
-				lastVal = r;
-			}
-		}
-		return maxPos.max * 3 + lt * 2 + row.reduce((a, b) => a + b);
+		return max * 3 + this.nullCellCount(nums) - this.getJushi();
 	},
-	getWight2() {
-		let nums = this.gameNumbers.numbers;
-		//left=>right
-		let l_r = 0,
-			r_l = 0;
+	nullCellCount: function(nums) {
+		let cnt = 0;
+		nums.numbers.forEach(function(row, rowIndex) {
+			row.forEach(function(number, colIndex) {
+				if (!number) cnt++;
+			})
+		});
+		return cnt;
+	},
+	getJushi: function() {
+		let nums = this.gameNumbers.numbers,
+			jushi = 0;
 		for (let i = 0; i < nums.length; i++) {
+			let lastVal1 = null,
+				lastVal2 = null;
 			for (let j = 0; j < nums[i].length; j++) {
-				if (nums[i][j] > 0 || j == nums[i].length - 1) {
-					let l = nums[i][0] ? Math.log(nums[i][0]) / Math.log(2) : 0,
-						r = nums[i][j] ? Math.log(nums[i][j]) / Math.log(2) : 0;
-					if (l > r) l_r += r - l;
-					else if (r > l) r_l += l - r;
-					break;
+				let val1 = nums[i][j] ? Math.log(nums[i][j]) / Math.log(2) : 0,
+					val2 = nums[j][i] ? Math.log(nums[j][i]) / Math.log(2) : 0;
+				if (lastVal1 !== null) {
+					if (val1)
+						jushi += Math.abs(lastVal1 - val1);
+					if (val2)
+						jushi += Math.abs(lastVal2 - val2);
 				}
+				lastVal1 = val1;
+				lastVal2 = val2;
 			}
 		}
-		//up=>down
-		let u_d = 0,
-			d_u = 0;
-		for (let i = 0; i < nums.length; i++) {
-			for (let j = 0; j < nums[i].length; j++) {
-				if (nums[i][j] > 0 || j == nums[i].length - 1) {
-					let u = nums[0][j] ? Math.log(nums[0][j]) / Math.log(2) : 0,
-						d = nums[i][j] ? Math.log(nums[i][j]) / Math.log(2) : 0;
-					if (l > r) l_r += r - l;
-					else if (r > l) r_l += l - r;
-					break;
-				}
-			}
-		}
+		return jushi;
 	},
 	willNextWorst: function(key) {
 		let _backNumbers = $.extend(true, [], this.gameNumbers.numbers),
@@ -256,7 +230,7 @@ AutoPlay.prototype = {
 	}
 }
 module.exports = AutoPlay;
-},{"./keys":4}],3:[function(require,module,exports){
+},{"./keys":4,"./numbers":6}],3:[function(require,module,exports){
 var $ = require('jquery')
 var Keys = require('./keys')
 var Numbers = require('./numbers')
@@ -490,8 +464,13 @@ module.exports = MessageBox
 var ROW_COUNT = 4
 var COL_COUNT = 4
 
-function Numbers() {
-	this.numbers = [[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0]]
+function Numbers(numbers) {
+	this.numbers = numbers||[
+		[0, 0, 0, 0],
+		[0, 0, 0, 0],
+		[0, 0, 0, 0],
+		[0, 0, 0, 0]
+	]
 	// 历次移动的过程记录
 	// TODO 利用记录的移动过程数据实现“撤销”、“重做”
 	this.moves = []
@@ -501,58 +480,62 @@ function Numbers() {
 
 Numbers.prototype = {
 
-	forEach: function (callback) {
+	forEach: function(callback) {
 		if (typeof callback !== 'function') return
-		this.numbers.forEach(function (row, rowIndex) {
-			row.forEach(function (number, colIndex) {
+		this.numbers.forEach(function(row, rowIndex) {
+			row.forEach(function(number, colIndex) {
 				callback(number, rowIndex, colIndex)
 			})
 		})
 	},
 
-	get: function (row, col) {
+	get: function(row, col) {
 		var row = this.numbers[row]
 		return row ? row[col] : null
 	},
-	set: function (row, col, n) {
+	set: function(row, col, n) {
 		if (row >= 0 && row < this.rowCount &&
 			col >= 0 && row < this.colCount) {
 			this.numbers[row][col] = n
 		}
 	},
 
-	moveLeft: function () {
+	moveLeft: function() {
 		return this.mergeRows('asc');
 	},
-	moveUp: function () {
+	moveUp: function() {
 		return this.mergeCols('asc');
 	},
-	moveRight: function () {
+	moveRight: function() {
 		return this.mergeRows('desc');
 	},
-	moveDown: function () {
+	moveDown: function() {
 		return this.mergeCols('desc');
 	},
 
-	mergeRows: function (order) {
+	mergeRows: function(order) {
 		var move = this.currentMove = []
 
 		for (var i = 0, len = this.rowCount; i < len; i++) {
 			this.mergeRow(i, order);
 		}
 
-		if (move.length > 0) { this.moves.push(move) }
+		if (move.length > 0) {
+			this.moves.push(move)
+		}
 		this.currentMove = null
 		return move
 	},
-	mergeCols: function (order) {
+	mergeCols: function(order) {
 		var move = this.currentMove = []
 
 		for (var i = 0, len = this.colCount; i < len; i++) {
 			this.mergeCol(i, order);
 		}
 
-		if (move.length > 0) { this.moves.push(move) }
+		if (move.length > 0) {
+			this.moves.push(move)
+		}
 		this.currentMove = null
 		return move
 	},
@@ -560,7 +543,7 @@ Numbers.prototype = {
 	/*
 	 * 任意 cell 值为 0，或与相邻 cell 值相等即可以合并
 	 */
-	canMerge: function () {
+	canMerge: function() {
 		var numbers = this.numbers
 		var num
 		var rowCount = this.rowCount
@@ -589,7 +572,7 @@ Numbers.prototype = {
 	/*
 	 * @param {'asc'|'desc'} order - 'asc' 从小往大; 'desc' 从大往小
 	 */
-	mergeRow: function (row, order) {
+	mergeRow: function(row, order) {
 		var colX = this.colCount
 		var col1
 		var col2
@@ -615,7 +598,7 @@ Numbers.prototype = {
 			}
 		}
 	},
-	mergeCol: function (col, order) {
+	mergeCol: function(col, order) {
 		var rowX = this.rowCount
 		var row1
 		var row2
@@ -648,7 +631,7 @@ Numbers.prototype = {
 	 * 返回在经过操作后值为 0 可以用作后续 cell 合并目标的 cell 坐标
 	 * @return {[{number} row, {number} col] | null}
 	 */
-	mergeCell: function (row1, col1, row2, col2) {
+	mergeCell: function(row1, col1, row2, col2) {
 		var num1 = this.numbers[row1][col1]
 		var num2 = this.numbers[row2][col2]
 
@@ -742,12 +725,12 @@ Numbers.prototype = {
 	/*
 	 * @param {Step} step - {from: [row2, col2, num2], to: [row1, col1, num1]}
 	 */
-	moveCell: function (step) {
+	moveCell: function(step) {
 		var from = step.from
 		var to = step.to
 		this.currentMove.push(step)
-		this.numbers[ from[0] ][ from[1] ] = 0
-		this.numbers[ to[0] ][ to[1] ] = step.result
+		this.numbers[from[0]][from[1]] = 0
+		this.numbers[to[0]][to[1]] = step.result
 	}
 }
 

@@ -1,8 +1,8 @@
 var ROW_COUNT = 4
 var COL_COUNT = 4
 
-function Numbers() {
-	this.numbers = [
+function Numbers(numbers) {
+	this.numbers = numbers||[
 		[0, 0, 0, 0],
 		[0, 0, 0, 0],
 		[0, 0, 0, 0],
@@ -268,15 +268,6 @@ Numbers.prototype = {
 		this.currentMove.push(step)
 		this.numbers[from[0]][from[1]] = 0
 		this.numbers[to[0]][to[1]] = step.result
-	},
-	nullCellCount: function() {
-		let cnt = 0;
-		this.numbers.forEach(function(row, rowIndex) {
-			row.forEach(function(number, colIndex) {
-				if (!number) cnt++;
-			})
-		});
-		return cnt;
 	}
 }
 

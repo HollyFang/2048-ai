@@ -1,4 +1,5 @@
 var Keys = require('./keys')
+var Numbers = require('./numbers')
 var PREFER_DIRECT = {
 	left: 1,
 	up: 1,
@@ -41,8 +42,9 @@ AutoPlay.prototype = {
 		this.playInterval = null;
 	},
 	play: function() {
-		let e = $.extend(true, {}, FAKE_EVENT);
-		e.which = this.getBestMove();
+		let e = $.extend(true, {}, FAKE_EVENT),
+		_move= this.getBestMove();
+		e.which =_move.which;
 		if (e.which)
 			this.playingGame.onKeydown(e);
 		else {
@@ -51,35 +53,29 @@ AutoPlay.prototype = {
 		}
 
 	},
-	getBestMove: function() {
+	getBestMove: function(times,nums) {
 		let result = [],
 			which = 37,
-			newNumbers = []; 
-		[null, 0, -32, null].max()
+			newNumbers = [];
+			times=times===undefined?1:times; 
 		for (let i = 0; i < 4; i++) {
-			let _a = this.ifMove(37 + i);
+			let _a = this.ifMove(37 + i,nums,times);
 			if (_a) {
-				//newNumbers.push(_a.resNumbers);
-				result.push(_a.weight);
+				//let obj={};
+				//obj[37 + i]=_a.weight2||_a.weight;
+				result.push(_a.weight2||_a.weight);
 			} else {
 				result.push(null);
 			}
 		}
-		let theMax = result.max(),
-			newWhich = [];
+		let theMax = result.max();
 		for (let i in result) {
 			if (result[i] === theMax) {
-				//newWhich.push(i - 0);
 				which += (i - 0);
 				break
 			}
 		}
-		/*if (newWhich.length == 1)
-			which += newWhich[0];
-		else {
-			newNumbers
-		}*/
-		return which;
+		return {which,value:theMax};
 	},
 	_getMaxValue: function(arr) {
 		let max = 0;
@@ -105,53 +101,56 @@ AutoPlay.prototype = {
 			pos
 		}
 	},
-	_move: function(key) {
+	_move: function(key,nums) {
 		let move;
 		switch (key) {
 			case Keys.Left:
-				move = this.gameNumbers.moveLeft()
+				move = nums.moveLeft()
 				break
 			case Keys.Up:
-				move = this.gameNumbers.moveUp()
+				move = nums.moveUp()
 				break
 			case Keys.Right:
-				move = this.gameNumbers.moveRight()
+				move = nums.moveRight()
 				break
 			case Keys.Down:
-				move = this.gameNumbers.moveDown()
+				move = nums.moveDown()
 				break
 		}
 		return move;
 	},
-	ifMove: function(key) {
+	ifMove: function(key,nums,times) {
+		nums=nums||this.gameNumbers.numbers;
 		let _res = null,
-			_numbers = this.gameNumbers.numbers,
-			_backNumbers = $.extend(true, [], this.gameNumbers.numbers),
-			move = this._move(key);
-		if (move && move.length > 0) { //&& this.willNextWorst(key)
-
-			/*
-			let maxPos = this._getMaxValuePos(this.gameNumbers.numbers),
-				_weight = 0;
-				if (axPos.max < 32)
-				_weight = (8 - maxPos.pos[0] - maxPos.pos[1]) * axPos.max;
-			else {
-				_weight += this.gameNumbers.numbers[0][1] * 3 + this.gameNumbers.numbers[0][2] * 2 this.gameNumbers.numbers[0][3]
-			}*/
+			_backNumbers = $.extend(true, [], nums);
+		let calNums=new Numbers(_backNumbers),
+			move = this._move(key,calNums);
+		if (move && move.length > 0) {
 			_res = {
-				weight: this.getWight()
+				weight: this.getWight(calNums)
 			};
+			if(times>0){
+				let cal2=this.getBestMove(times-1,calNums.numbers);
+				_res.weight2=cal2.value;
+			}
 		}
-		this.gameNumbers.numbers = _backNumbers;
 		return _res;
 	},
-	getWight() {
-		let nums = this.gameNumbers.numbers,
-			max = this._getMaxValue(nums);
+	getWight: function(nums) {
+		let max = this._getMaxValue(nums.numbers);
 
-		return max * 3 + this.gameNumbers.nullCellCount() - this.getJushi();
+		return max * 3 + this.nullCellCount(nums) - this.getJushi();
 	},
-	getJushi() {
+	nullCellCount: function(nums) {
+		let cnt = 0;
+		nums.numbers.forEach(function(row, rowIndex) {
+			row.forEach(function(number, colIndex) {
+				if (!number) cnt++;
+			})
+		});
+		return cnt;
+	},
+	getJushi: function() {
 		let nums = this.gameNumbers.numbers,
 			jushi = 0;
 		for (let i = 0; i < nums.length; i++) {
