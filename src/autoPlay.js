@@ -11,14 +11,23 @@ var FAKE_EVENT = {
 	preventDefault: () => {}
 };
 
-const INTERVAL = 0;
-const ITERATE_TIMES = 2;
+var INTERVAL = 300;
+const ITERATE_TIMES = 0;
 
 Array.prototype.getMaxExcept = function(exp) {
 	let _max, arr = [null];
 	if (exp !== undefined) arr = arr.concat(exp);
 	this.forEach((a) => {
 		if (!arr.includes(a) && (_max === undefined || a > _max))
+			_max = a;
+	});
+	return _max;
+};
+Array.prototype.getMinExcept = function(exp) {
+	let _max, arr = [null];
+	if (exp !== undefined) arr = arr.concat(exp);
+	this.forEach((a) => {
+		if (!arr.includes(a) && (_max === undefined || a < _max))
 			_max = a;
 	});
 	return _max;
@@ -147,7 +156,7 @@ AutoPlay.prototype = {
 		console.log(`${times}=>${key}`);
 		if (move && move.length > 0) {
 			_res = {
-				weight: this.getWight(calNums.numbers)
+				weight: this.getWight(calNums.numbers, times)
 			};
 			if (times > 0) {
 				let cal2 = this.getBestMove(times - 1, calNums.numbers);
@@ -157,13 +166,12 @@ AutoPlay.prototype = {
 		console.log(_res);
 		return _res;
 	},
-	getWight: function(nums) {
+	getWight: function(nums, times) {
 		let max = this._getMaxValueExcept(nums),
 			nullCount = this.nullCellCount(nums),
-			jushi = this.getJushi(nums),
-			//m = Math.log(max) / Math.log(2) * Math.pow(0.5, nullCount) * 2 + nullCount + jushi;
-			m = max + 1.5 * nullCount + 0.5 * jushi;
-		console.log(`max:${max};nullCount:${nullCount};jushi:${jushi}`)
+			jushi = this.getJushi2(nums),
+			//m = Math.log(max) / Math.log(2) * (Math.log(nullCount) / Math.log(0.5) + 1) + nullCount + jushi * (Math.log(nullCount) / Math.log(2) + 1);
+			m = /*Math.log(max) / Math.log(2) + nullCount -*/ -jushi;
 		return m;
 	},
 	nullCellCount: function(nums) {
@@ -184,17 +192,53 @@ AutoPlay.prototype = {
 			for (let j = 0; j < nums[i].length; j++) {
 				let val1 = nums[i][j] ? Math.log(nums[i][j]) / Math.log(2) : 0,
 					val2 = nums[j][i] ? Math.log(nums[j][i]) / Math.log(2) : 0;
-				if (lastVal1 !== null) {
-					jushi += lastVal1 - val1;
-					jushi += lastVal2 - val2;
+				if (lastVal1) {
+					jushi += (lastVal1 - val1);
 					jushi2 += Math.abs(lastVal1 - val1);
+					jushi += (lastVal2 - val2);
 					jushi2 += Math.abs(lastVal2 - val2);
 				}
 				lastVal1 = val1;
 				lastVal2 = val2;
 			}
 		}
-		return jushi;
+		return Math.abs(jushi);
+	},
+	getJushi2: function(nums) {
+		let jushi = 0,
+			jushi2 = 0,
+			lastVal1 = null;
+		for (let i = 0; i < nums.length; i++) {
+			if (i % 2 == 0) {
+				for (let j = 0; j < nums.length; j++) {
+					let val1 = this.getLog2(nums[i][j]); //? Math.log(nums[i][j]) / Math.log(2) : 0;
+					if (lastVal1) {
+						jushi += (lastVal1 - val1);
+						if (j == 0)
+							jushi2 += this.getLog2(nums[i][nums.length - 1 - j]) - this.getLog2(nums[i - 1][nums.length - 1 - j]);
+						else
+							jushi2 += lastVal1 - val1;
+					}
+					lastVal1 = val1;
+				}
+			} else {
+				for (let j = nums.length - 1; j > -1; j--) {
+					let val1 = this.getLog2(nums[i][j]); //? Math.log(nums[i][j]) / Math.log(2) : 0;
+					if (lastVal1) {
+						jushi += (lastVal1 - val1);
+						if (j == nums.length - 1)
+							jushi2 += this.getLog2(nums[i][nums.length - 1 - j]) - this.getLog2(nums[i - 1][nums.length - 1 - j]);
+						else
+							jushi2 += lastVal1 - val1;
+					}
+					lastVal1 = val1;
+				}
+			}
+		}
+		return [-jushi, jushi, jushi2, -jushi2].getMaxExcept();
+	},
+	getLog2(val) {
+		return val ? Math.log(val) / Math.log(2) : 0;
 	}
 }
 module.exports = AutoPlay;

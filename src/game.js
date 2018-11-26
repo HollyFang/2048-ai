@@ -181,15 +181,15 @@ $.extend(Game.prototype, {
 	getRandomFreeCell: function() {
 		// 空闲位置 num 属性为 no
 		var cells = this.$board.find('[num="no"]')
-		var count = cells.length
-		var rand = cells.length - 1; //Math.floor(Math.random() * count)
+		var count = cells.length;
+		var rand = Math.floor(Math.random() * count); //cells.length - 1; //
 		return cells.eq(rand)
 	},
 
 	// 随机数为 2 或 4
 	getRandomNumber: function() {
-		return 2;
-		//return Math.random() > 0.1 ? 2 : 4
+		//return 2;
+		return Math.random() > 0.1 ? 2 : 4
 	},
 
 	getCell: function(row, col) {
