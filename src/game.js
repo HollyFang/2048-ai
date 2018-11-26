@@ -55,12 +55,12 @@ $.extend(Game.prototype, {
 			this.trigger('gameOver')
 		}
 
-		this.numbers.forEach($.proxy(function(n) {
+		/*this.numbers.forEach($.proxy(function(n) {
 			if (n === 2048) {
 				this.running = false;
 				this.msgBox.show("Success! You got 2048!");
 			}
-		}, this))
+		}, this))*/
 
 		return !this.running
 	},
