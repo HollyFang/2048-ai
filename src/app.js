@@ -8,7 +8,8 @@ $(function() {
 	var $toggle = $('#toggle')
 
 	$('body').on('click', '.new-round', function() {
-		game.newRound()
+		game.newRound();
+		game.gameNumbers = game.numbers;
 	})
 
 	game.on('move', function(e) {
@@ -21,7 +22,7 @@ $(function() {
 
 	game.newRound();
 	var auto = new Auto(game);
-	auto.autoPlay();
+	//auto.autoPlay();
 	$toggle.on('click', function() {
 		auto.togglePlay();
 	})

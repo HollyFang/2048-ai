@@ -3,7 +3,7 @@ var Keys = require('./keys')
 var Numbers = require('./numbers')
 var MessageBox = require('./message-box')
 
-var MOVE_ANIMATION_TIME = 200 // ms
+var MOVE_ANIMATION_TIME = 100 // ms
 
 function Game(el) {
 	this.$el = $(el || '.game-2048-board')
@@ -101,7 +101,6 @@ $.extend(Game.prototype, {
 
 			// 等待动画完成
 			this.actionTimer = setTimeout($.proxy(function() {
-				this.actionTimer = null
 				if (!this.isGameOver()) {
 					this.trigger({
 						type: 'move',
@@ -110,6 +109,7 @@ $.extend(Game.prototype, {
 					this.addRandomNumber()
 					this.isGameOver()
 				}
+				this.actionTimer = null
 			}, this), MOVE_ANIMATION_TIME);
 		}
 	},
@@ -146,7 +146,7 @@ $.extend(Game.prototype, {
 			var result = step.result
 			game.updateCell($cellTo, result)
 			$cellFromClone.remove()
-		}, MOVE_ANIMATION_TIME)
+		}, 0)
 	},
 
 	showNumber: function(row, col, num) {
@@ -168,14 +168,7 @@ $.extend(Game.prototype, {
 		var num = this.getRandomNumber()
 		this.numbers.set(pos.row, pos.col, num)
 		this.showNumber(pos.row, pos.col, num)
-	},
-
-	getRandomFreeCell: function() {
-		// 空闲位置 num 属性为 no
-		var cells = this.$board.find('[num="no"]')
-		var count = cells.length
-		var rand = Math.floor(Math.random() * count)
-		return cells.eq(rand)
+		console.log("******************************addRandomNumber");
 	},
 
 	getCellPosition: function($cell) {
@@ -185,9 +178,18 @@ $.extend(Game.prototype, {
 		}
 	},
 
+	getRandomFreeCell: function() {
+		// 空闲位置 num 属性为 no
+		var cells = this.$board.find('[num="no"]')
+		var count = cells.length
+		var rand = cells.length - 1; //Math.floor(Math.random() * count)
+		return cells.eq(rand)
+	},
+
 	// 随机数为 2 或 4
 	getRandomNumber: function() {
-		return Math.random() > 0.5 ? 2 : 4
+		return 2;
+		//return Math.random() > 0.1 ? 2 : 4
 	},
 
 	getCell: function(row, col) {

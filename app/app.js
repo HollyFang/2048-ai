@@ -9,7 +9,8 @@ $(function() {
 	var $toggle = $('#toggle')
 
 	$('body').on('click', '.new-round', function() {
-		game.newRound()
+		game.newRound();
+		game.gameNumbers = game.numbers;
 	})
 
 	game.on('move', function(e) {
@@ -22,7 +23,7 @@ $(function() {
 
 	game.newRound();
 	var auto = new Auto(game);
-	auto.autoPlay();
+	//auto.autoPlay();
 	$toggle.on('click', function() {
 		auto.togglePlay();
 	})
@@ -56,7 +57,8 @@ var FAKE_EVENT = {
 	preventDefault: () => {}
 };
 
-var INTERVAL=500;
+const INTERVAL = 0;
+const ITERATE_TIMES = 2;
 
 Array.prototype.getMaxExcept = function(exp) {
 	let _max, arr = [null];
@@ -72,13 +74,23 @@ function AutoPlay(game) {
 	this.playingGame = game;
 	this.gameNumbers = game.numbers;
 	this.playInterval = null;
+	this.calculating = false;
 }
 
 AutoPlay.prototype = {
 	autoPlay: function() {
-		this.playInterval = setInterval(() => {
-			this.play();
-		}, INTERVAL);
+		/*if (INTERVAL)
+			this.startTime = (new Date()).getTime();*/
+		this.playInterval = requestAnimationFrame(() => {
+			let timeOk = false;
+			if (!INTERVAL || !this.startPlayTime || new Date().getTime() - this.startPlayTime > INTERVAL)
+				timeOk = true;
+			if (!this.calculating && !this.playingGame.actionTimer && timeOk)
+				this.play();
+			else
+				console.log("没运行好");
+			this.autoPlay();
+		});
 	},
 	togglePlay: function() {
 		if (this.playInterval)
@@ -87,32 +99,33 @@ AutoPlay.prototype = {
 			this.autoPlay();
 	},
 	pausePlay: function() {
-		clearInterval(this.playInterval);
+		cancelAnimationFrame(this.playInterval);
 		this.playInterval = null;
 	},
 	play: function() {
+		this.calculating = true;
+		this.startPlayTime = (new Date()).getTime();
 		let e = $.extend(true, {}, FAKE_EVENT),
-		_move= this.getBestMove();
-		e.which =_move.which;
+			_move = this.getBestMove(ITERATE_TIMES);
+		e.which = _move.which;
+		console.log("****************最佳的方向", e.which);
 		if (e.which)
 			this.playingGame.onKeydown(e);
 		else {
 			alert("OH,NO。。。。。。。。");
-			this.togglePlay();
+			this.pausePlay();
 		}
-
+		this.calculating = false;
 	},
-	getBestMove: function(times,nums) {
+	getBestMove: function(times, nums) {
 		let result = [],
 			which = 37,
 			newNumbers = [];
-			times=times===undefined?1:times; 
+		times = times === undefined ? 1 : times; 
 		for (let i = 0; i < 4; i++) {
-			let _a = this.ifMove(37 + i,nums,times);
+			let _a = this.ifMove(37 + i, nums, times);
 			if (_a) {
-				//let obj={};
-				//obj[37 + i]=_a.weight2||_a.weight;
-				result.push(_a.weight2||_a.weight);
+				result.push(_a.weight);
 			} else {
 				result.push(null);
 			}
@@ -124,7 +137,10 @@ AutoPlay.prototype = {
 				break
 			}
 		}
-		return {which,value:theMax};
+		return {
+			which,
+			value: theMax
+		};
 	},
 	_getMaxValueExcept: function(arr, exp) {
 		let max = 0;
@@ -132,7 +148,7 @@ AutoPlay.prototype = {
 			let _a = arr[i].getMaxExcept(exp);
 			if (_a > max) max = _a;
 		}
-		return Math.log(max) / Math.log(2);
+		return max;
 	},
 	_getMaxValuePos: function(arr) {
 		let max = 0,
@@ -150,7 +166,7 @@ AutoPlay.prototype = {
 			pos
 		}
 	},
-	_move: function(key,nums) {
+	_move: function(key, nums) {
 		let move;
 		switch (key) {
 			case Keys.Left:
@@ -168,41 +184,46 @@ AutoPlay.prototype = {
 		}
 		return move;
 	},
-	ifMove: function(key,nums,times) {
-		nums=nums||this.gameNumbers.numbers;
+	ifMove: function(key, nums, times) {
+		nums = nums || this.gameNumbers.numbers;
 		let _res = null,
 			_backNumbers = $.extend(true, [], nums);
-		let calNums=new Numbers(_backNumbers),
-			move = this._move(key,calNums);
+		let calNums = new Numbers(_backNumbers),
+			move = this._move(key, calNums);
+		console.log(`${times}=>${key}`);
 		if (move && move.length > 0) {
 			_res = {
-				weight: this.getWight(calNums)
+				weight: this.getWight(calNums.numbers)
 			};
-			if(times>0){
-				let cal2=this.getBestMove(times-1,calNums.numbers);
-				_res.weight2=cal2.value;
+			if (times > 0) {
+				let cal2 = this.getBestMove(times - 1, calNums.numbers);
+				_res.weight = cal2.value > _res.weight ? cal2.value : _res.weight;
 			}
 		}
+		console.log(_res);
 		return _res;
 	},
 	getWight: function(nums) {
-		let max = this._getMaxValueExcept(nums.numbers),
-			max2 = this._getMaxValueExcept(nums.numbers, max);
-
-		return max * 3 +this.nullCellCount(nums) - this.getJushi()*1.5;
+		let max = this._getMaxValueExcept(nums),
+			nullCount = this.nullCellCount(nums),
+			jushi = this.getJushi(nums),
+			//m = Math.log(max) / Math.log(2) * Math.pow(0.5, nullCount) * 2 + nullCount + jushi;
+			m = max + 1.5 * nullCount + 0.5 * jushi;
+		console.log(`max:${max};nullCount:${nullCount};jushi:${jushi}`)
+		return m;
 	},
 	nullCellCount: function(nums) {
 		let cnt = 0;
-		nums.numbers.forEach(function(row, rowIndex) {
+		nums.forEach(function(row, rowIndex) {
 			row.forEach(function(number, colIndex) {
 				if (!number) cnt++;
 			})
 		});
 		return cnt;
 	},
-	getJushi: function() {
-		let nums = this.gameNumbers.numbers,
-			jushi = 0;
+	getJushi: function(nums) {
+		let jushi = 0,
+			jushi2 = 0;
 		for (let i = 0; i < nums.length; i++) {
 			let lastVal1 = null,
 				lastVal2 = null;
@@ -210,28 +231,16 @@ AutoPlay.prototype = {
 				let val1 = nums[i][j] ? Math.log(nums[i][j]) / Math.log(2) : 0,
 					val2 = nums[j][i] ? Math.log(nums[j][i]) / Math.log(2) : 0;
 				if (lastVal1 !== null) {
-					if (val1)
-						jushi += Math.abs(lastVal1 - val1);
-					if (val2)
-						jushi += Math.abs(lastVal2 - val2);
+					jushi += lastVal1 - val1;
+					jushi += lastVal2 - val2;
+					jushi2 += Math.abs(lastVal1 - val1);
+					jushi2 += Math.abs(lastVal2 - val2);
 				}
 				lastVal1 = val1;
 				lastVal2 = val2;
 			}
 		}
 		return jushi;
-	},
-	willNextWorst: function(key) {
-		let _backNumbers = $.extend(true, [], this.gameNumbers.numbers),
-			move = this._move(key),
-			_worst = true;
-
-		if (move && move.length > 0) {
-			if (this.ifMove(37) || this.ifMove(38))
-				_worst = false;
-		}
-		this.gameNumbers.numbers = _backNumbers;
-		return _worst;
 	}
 }
 module.exports = AutoPlay;
@@ -241,7 +250,7 @@ var Keys = require('./keys')
 var Numbers = require('./numbers')
 var MessageBox = require('./message-box')
 
-var MOVE_ANIMATION_TIME = 200 // ms
+var MOVE_ANIMATION_TIME = 100 // ms
 
 function Game(el) {
 	this.$el = $(el || '.game-2048-board')
@@ -339,7 +348,6 @@ $.extend(Game.prototype, {
 
 			// 等待动画完成
 			this.actionTimer = setTimeout($.proxy(function() {
-				this.actionTimer = null
 				if (!this.isGameOver()) {
 					this.trigger({
 						type: 'move',
@@ -348,6 +356,7 @@ $.extend(Game.prototype, {
 					this.addRandomNumber()
 					this.isGameOver()
 				}
+				this.actionTimer = null
 			}, this), MOVE_ANIMATION_TIME);
 		}
 	},
@@ -384,7 +393,7 @@ $.extend(Game.prototype, {
 			var result = step.result
 			game.updateCell($cellTo, result)
 			$cellFromClone.remove()
-		}, MOVE_ANIMATION_TIME)
+		}, 0)
 	},
 
 	showNumber: function(row, col, num) {
@@ -406,14 +415,7 @@ $.extend(Game.prototype, {
 		var num = this.getRandomNumber()
 		this.numbers.set(pos.row, pos.col, num)
 		this.showNumber(pos.row, pos.col, num)
-	},
-
-	getRandomFreeCell: function() {
-		// 空闲位置 num 属性为 no
-		var cells = this.$board.find('[num="no"]')
-		var count = cells.length
-		var rand = Math.floor(Math.random() * count)
-		return cells.eq(rand)
+		console.log("******************************addRandomNumber");
 	},
 
 	getCellPosition: function($cell) {
@@ -423,9 +425,18 @@ $.extend(Game.prototype, {
 		}
 	},
 
+	getRandomFreeCell: function() {
+		// 空闲位置 num 属性为 no
+		var cells = this.$board.find('[num="no"]')
+		var count = cells.length
+		var rand = cells.length - 1; //Math.floor(Math.random() * count)
+		return cells.eq(rand)
+	},
+
 	// 随机数为 2 或 4
 	getRandomNumber: function() {
-		return Math.random() > 0.5 ? 2 : 4
+		return 2;
+		//return Math.random() > 0.1 ? 2 : 4
 	},
 
 	getCell: function(row, col) {
