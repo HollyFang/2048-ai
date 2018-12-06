@@ -9,7 +9,7 @@ $(function() {
 
 	$('body').on('click', '.new-round', function() {
 		game.newRound();
-		game.gameNumbers = game.numbers;
+		//game.gameNumbers = game.numbers;
 	})
 
 	game.on('move', function(e) {

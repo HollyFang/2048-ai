@@ -7,7 +7,147 @@
 	<link rel="stylesheet" href="app.css">
 </head>
 <body>
+<script>
+	/*var a =[[0,2,2,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+	 function getJushi2(nums) {
+		let values = [0, 0, 0, 0, 0, 0, 0, 0],
+			locs = [null, null, null, null, null, null, null, null],
+			weight = 1,
+			commonRatio = 0.25;
+		for (let i = 0; i < nums.length; i++) {
+			for (let j = 0; j < nums.length; j++) {
+				if (i % 2 == 0) {
+					values[0] += nums[i][j] * weight;
+					if (!nums[i][j] && !locs[0]) {
+						locs[0] = [i, j];
+					}
+					values[1] += nums[j][i] * weight;
+					if (!nums[j][i] && !locs[1]) {
+						locs[1] = [j, i];
+					}
+					values[2] += nums[i][nums.length - 1 - j] * weight;
+					if (!nums[i][nums.length - 1 - j] && !locs[2]) {
+						locs[2] = [i, nums.length - 1 - j];
+					}
+					values[3] += nums[nums.length - 1 - j][i] * weight;
+					if (!nums[nums.length - 1 - j][i] && !locs[3]) {
+						locs[3] = [nums.length - 1 - j, i];
+					}
+					values[4] += nums[nums.length - 1 - i][j] * weight;
+					if (!nums[nums.length - 1 - i][j] && !locs[4]) {
+						locs[4] = [nums.length - 1 - i, j];
+					}
+					values[5] += nums[nums.length - 1 - i][nums.length - 1 -j] * weight;
+					if (!nums[nums.length - 1 - i][nums.length - 1 -j] && !locs[5]) {
+						locs[5] = [nums.length - 1 - i, nums.length - 1 -j];
+					}
+					values[6] += nums[j][nums.length - 1 - i] * weight;
+					if (!nums[j][nums.length - 1 - i] && !locs[6]) {
+						locs[6] = [j, nums.length - 1 - i];
+					}
+					values[7] += nums[nums.length - 1 -j][nums.length - 1 - i] * weight;
+					if (!nums[nums.length - 1 -j][nums.length - 1 - i] && !locs[7]) {
+						locs[7] = [nums.length - 1 -j, nums.length - 1 - i];
+					}
+				} else {
+					values[0] += nums[i][nums.length - 1 - j] * weight;
+					if (!nums[i][nums.length - 1 - j] && !locs[0]) {
+						locs[0] = [i, nums.length - 1 - j];
+					}
+					values[1] += nums[nums.length - 1 - j][i] * weight;
+					if (!nums[nums.length - 1 - j][i] && !locs[1]) {
+						locs[1] = [nums.length - 1 - j, i];
+					}
+					values[2] += nums[i][j] * weight; 
+					if (!nums[i][j] && !locs[2]) {
+						locs[2] = [i, j];
+					}
+					values[3] += nums[j][i] * weight;
+					if (!nums[j][i] && !locs[3]) {
+						locs[3] = [j, i];
+					}
+					values[4] += nums[nums.length - 1 - i][nums.length - 1 -j] * weight;
+					if (!nums[nums.length - 1 - i][nums.length - 1 -j] && !locs[4]) {
+						locs[4] = [nums.length - 1 - i, nums.length - 1 -j];
+					}
+					values[5] += nums[nums.length - 1 - i][j] * weight;
+					if (!nums[nums.length - 1 - i][j] && !locs[5]) {
+						locs[5] = [nums.length - 1 - i, j];
+					}
+					values[6] += nums[nums.length - 1 - j][nums.length - 1 - i] * weight;
+					if (!nums[nums.length - 1 - j][nums.length - 1 - i] && !locs[6]) {
+						locs[6] = [nums.length - 1 - j,nums.length - 1 - i];
+					}
+					values[7] += nums[j][nums.length - 1 - i] * weight;
+					if (!nums[j][nums.length - 1 - i] && !locs[7]) {
+						locs[7] = [j, nums.length - 1 - i];
+					}
+				}
+				weight *= commonRatio;
+			}
 
+		}
+		return values;
+	}
+	function getJushi3(nums) {
+		let jushi1 = 0,
+			jushi2 = 0,
+			jushi3 = 0,
+			jushi4 = 0,
+			lastVal1 = null,
+			lastVal2 = null,
+			lastVal3 = null,
+			lastVal4 = null,
+			weight = 1,
+			commonRatio =  0.25;
+		for (let i = 0; i < nums.length; i++) {
+			if (i % 2 == 0) {
+				for (let j = 0; j < nums.length; j++) {
+					if (lastVal3!==null) {
+						jushi1 += (lastVal1 - nums[i][j]) * weight;
+						jushi3 += (lastVal3 - nums[j][i]) * weight;
+						if (j === 0) {
+							jushi2 += (lastVal2-nums[i][nums.length -1- j]) * weight;
+							jushi4 += (lastVal4-nums[nums.length - j-1][i]) * weight;
+							lastVal2 = nums[i][nums.length - 1 - j];
+							lastVal4 = nums[nums.length - 1 - j][i];
+						} else {
+							jushi2 += (nums[i][nums.length - j] - nums[i][nums.length - 1 - j]) * weight;
+							jushi4 += (nums[nums.length - j][i] - nums[nums.length - 1 - j][i]) * weight;
+							lastVal2 = nums[i][nums.length - 1 - j];
+							lastVal4 = nums[nums.length - 1 - j][i];
+						}
+					}
+					lastVal1 = nums[i][j];
+					lastVal3 = nums[j][i];
+				}
+			} else {
+				for (let j = nums.length - 1; j > -1; j--) {
+					if (lastVal1!==null) {
+						jushi1 += (lastVal1 - nums[i][j]) * weight;
+						jushi3 += (lastVal3 - nums[j][i]) * weight;
+						if (j == nums.length - 1) {
+							jushi2 += (nums[i - 1][nums.length - 1 - j]-nums[i][nums.length - 1 - j]) * weight;
+							jushi4 += (nums[nums.length - 1 - j][i - 1]-nums[nums.length - 1 - j][i]) * weight;
+							lastVal2 = nums[i][nums.length - 1 - j];
+							lastVal4 = nums[nums.length - 1 - j][i];
+						} else {
+							jushi2 += (lastVal2 - nums[i][nums.length - 1 - j]) * weight;
+							jushi4 += (lastVal4 - nums[i][nums.length - 1 - j]) * weight;
+							lastVal2 = nums[i][nums.length - 1 - j];
+							lastVal4 = nums[nums.length - 1 - j][i];
+						}
+					}
+					lastVal1 = nums[i][j];
+					lastVal3 = nums[j][i];
+				}
+			}
+			weight *= commonRatio;
+		}
+		return [-jushi1, jushi1, jushi2, -jushi2, jushi3, -jushi3, jushi4, -jushi4];
+	}
+	getJushi2(a);*/
+</script>
 <div class="game">
 	<div class="game-cmds">
 		<button class="new-round">New Round</button>

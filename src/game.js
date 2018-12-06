@@ -3,7 +3,7 @@ var Keys = require('./keys')
 var Numbers = require('./numbers')
 var MessageBox = require('./message-box')
 
-var MOVE_ANIMATION_TIME = 100 // ms
+var MOVE_ANIMATION_TIME = 200 // ms
 
 function Game(el) {
 	this.$el = $(el || '.game-2048-board')
@@ -101,6 +101,7 @@ $.extend(Game.prototype, {
 
 			// 等待动画完成
 			this.actionTimer = setTimeout($.proxy(function() {
+				this.actionTimer = null
 				if (!this.isGameOver()) {
 					this.trigger({
 						type: 'move',
@@ -109,7 +110,6 @@ $.extend(Game.prototype, {
 					this.addRandomNumber()
 					this.isGameOver()
 				}
-				this.actionTimer = null
 			}, this), MOVE_ANIMATION_TIME);
 		}
 	},
@@ -146,7 +146,7 @@ $.extend(Game.prototype, {
 			var result = step.result
 			game.updateCell($cellTo, result)
 			$cellFromClone.remove()
-		}, 0)
+		}, MOVE_ANIMATION_TIME)
 	},
 
 	showNumber: function(row, col, num) {
@@ -169,6 +169,9 @@ $.extend(Game.prototype, {
 		this.numbers.set(pos.row, pos.col, num)
 		this.showNumber(pos.row, pos.col, num)
 		console.log("******************************addRandomNumber");
+	},
+	setNumber: function(loc, num) {
+		this.numbers.set(loc[0], loc[1], num)
 	},
 
 	getCellPosition: function($cell) {
