@@ -58,7 +58,6 @@ var FAKE_EVENT = {
 };
 
 var INTERVAL = 500;
-const ITERATE_TIMES = 3;
 
 Array.prototype.getMaxExcept = function(exp) {
 	let _max, arr = [null];
@@ -93,12 +92,6 @@ function AutoPlay(game) {
 
 AutoPlay.prototype = {
 	autoPlay: function() {
-		/*if (INTERVAL)
-			this.startTime = (new Date()).getTime();*/
-		/*this.playInterval = setInterval(() => {
-
-			this.play();
-		}, INTERVAL)*/
 		this.playInterval = requestAnimationFrame(() => {
 			let timeOk = false;
 			if (!INTERVAL || !this.startPlayTime || new Date().getTime() - this.startPlayTime > INTERVAL)
@@ -123,8 +116,10 @@ AutoPlay.prototype = {
 	play: function() {
 		this.calculating = true;
 		this.startPlayTime = (new Date()).getTime();
+		let nullCount = this.nullCellCount(this.gameNumbers.numbers);
+		let times = 3; //nullCount > 7 ? 1 : (nullCount < 5 ? 4 : 3);
 		let e = $.extend(true, {}, FAKE_EVENT),
-			_move = this.getBestMove2(ITERATE_TIMES);
+			_move = this.getBestMove(times, times);
 		e.which = _move.move;
 		console.log("****************最佳的方向", e.which);
 		if (e.which)
@@ -134,31 +129,6 @@ AutoPlay.prototype = {
 			this.pausePlay();
 		}
 		this.calculating = false;
-	},
-	getBestMove: function(times, nums) {
-		let result = [],
-			which = 37,
-			newNumbers = [];
-		times = times === undefined ? 1 : times; 
-		for (let i = 0; i < 4; i++) {
-			let _a = this.ifMove(37 + i, nums, times);
-			if (_a) {
-				result.push(_a.weight);
-			} else {
-				result.push(null);
-			}
-		}
-		let theMax = result.getMaxExcept();
-		for (let i in result) {
-			if (result[i] === theMax) {
-				which += (i - 0);
-				break
-			}
-		}
-		return {
-			which,
-			value: theMax
-		};
 	},
 	_getMaxValueExcept: function(arr, exp) {
 		let max = 0;
@@ -202,7 +172,7 @@ AutoPlay.prototype = {
 		}
 		return move;
 	},
-	getBestMove2: function(times, nums) {
+	getBestMove: function(max_time, times, nums) {
 		nums = nums || this.gameNumbers.numbers;
 		let _res = {
 			score: -1,
@@ -214,11 +184,11 @@ AutoPlay.prototype = {
 			let move = this._move(key, this.calNumbers);
 			console.log(`${times}=>${key}`);
 			if (move && move.length > 0) {
-				let a = this.getJushi3(this.calNumbers.numbers);
+				let a = this.getJushi(this.calNumbers.numbers);
 				if (times > 0) {
 					this.calNumbers.numbers[a.loc[0]][a.loc[1]] = 2;
-					let cal2 = this.getBestMove2(times - 1, this.calNumbers.numbers);
-					a.max += cal2.score * Math.pow(0.9, ITERATE_TIMES - times + 1);
+					let cal2 = this.getBestMove(max_time, times - 1, this.calNumbers.numbers);
+					a.max += cal2.score * Math.pow(0.9, max_time - times + 1);
 				}
 				if (a.max > _res.score) {
 					_res.score = a.max;
@@ -227,34 +197,6 @@ AutoPlay.prototype = {
 			}
 		}
 		return _res;
-	},
-	ifMove: function(key, nums, times) {
-		nums = nums || this.gameNumbers.numbers;
-		let _res = null;
-		this.calNumbers.numbers = $.extend(true, [], nums);
-		let move = this._move(key, this.calNumbers);
-		console.log(`${times}=>${key}`);
-		if (move && move.length > 0) {
-			let a = this.getJushi3(this.calNumbers.numbers);
-			_res = {
-				weight: a.max
-			};
-			if (times > 0) {
-				this.calNumbers.numbers[a.loc[0]][a.loc[1]] = 2;
-				let cal2 = this.getBestMove(times - 1, this.calNumbers.numbers);
-				_res.weight += cal2.value * Math.pow(0.9, ITERATE_TIMES - times + 1);
-			}
-		}
-		console.log(_res);
-		return _res;
-	},
-	getWight: function(nums, times) {
-		let max = this._getMaxValueExcept(nums),
-			nullCount = this.nullCellCount(nums),
-			jushi = this.getJushi2(nums),
-			//m = Math.log(max) / Math.log(2) * (Math.log(nullCount) / Math.log(0.5) + 1) + nullCount + jushi * (Math.log(nullCount) / Math.log(2) + 1);
-			m = /*Math.log(max) / Math.log(2) + nullCount -*/ -jushi;
-		return m;
 	},
 	nullCellCount: function(nums) {
 		let cnt = 0;
@@ -265,89 +207,7 @@ AutoPlay.prototype = {
 		});
 		return cnt;
 	},
-	getJushi: function(nums) {
-		let jushi = 0,
-			jushi2 = 0;
-		for (let i = 0; i < nums.length; i++) {
-			let lastVal1 = null,
-				lastVal2 = null;
-			for (let j = 0; j < nums[i].length; j++) {
-				let val1 = nums[i][j] ? Math.log(nums[i][j]) / Math.log(2) : 0,
-					val2 = nums[j][i] ? Math.log(nums[j][i]) / Math.log(2) : 0;
-				if (lastVal1) {
-					jushi += (lastVal1 - val1);
-					jushi2 += Math.abs(lastVal1 - val1);
-					jushi += (lastVal2 - val2);
-					jushi2 += Math.abs(lastVal2 - val2);
-				}
-				lastVal1 = val1;
-				lastVal2 = val2;
-			}
-		}
-		return Math.abs(jushi);
-	},
-	getJushi2: function(nums) {
-		let jushi = 0,
-			jushi2 = 0,
-			jushi3 = 0,
-			jushi4 = 0,
-			lastVal1 = null,
-			lastVal2 = null,
-			lastVal3 = null,
-			lastVal4 = null,
-			weight = 1,
-			commonRatio = 1; // 0.25;
-		for (let i = 0; i < nums.length; i++) {
-			if (i % 2 == 0) {
-				for (let j = 0; j < nums.length; j++) {
-					let val1 = nums[i][j],
-						val3 = nums[j][i];
-					if (lastVal3) {
-						jushi += (lastVal1 - val1) * weight;
-						jushi3 += (lastVal3 - val3) * weight;
-						if (j == 0) {
-							jushi2 += (nums[i][nums.length - 1 - j] - nums[i - 1][nums.length - 1 - j]) * weight;
-							jushi4 += (nums[nums.length - 1 - j][i] - nums[nums.length - 1 - j][i - 1]) * weight;
-							lastVal2 = nums[i - 1][nums.length - 1 - j];
-							lastVal4 = nums[nums.length - 1 - j][i - 1];
-						} else {
-							jushi2 += (lastVal2 - val1) * weight;
-							jushi4 += (lastVal4 - val3) * weight;
-							lastVal2 = val1;
-							lastVal4 = val3;
-						}
-					}
-					lastVal1 = val1;
-					lastVal3 = val3;
-				}
-			} else {
-				for (let j = nums.length - 1; j > -1; j--) {
-					let val1 = nums[i][j],
-						val3 = nums[j][i];
-					if (lastVal1) {
-						jushi += (lastVal1 - val1) * weight;
-						jushi3 += (lastVal3 - val3) * weight;
-						if (j == nums.length - 1) {
-							jushi2 += (nums[i][nums.length - 1 - j] - nums[i - 1][nums.length - 1 - j]) * weight;
-							jushi4 += (nums[nums.length - 1 - j][i] - nums[nums.length - 1 - j][i - 1]) * weight;
-							lastVal2 = nums[i - 1][nums.length - 1 - j];
-							lastVal4 = nums[nums.length - 1 - j][i - 1];
-						} else {
-							jushi2 += (lastVal2 - val1) * weight;
-							jushi4 += (lastVal4 - val3) * weight;
-							lastVal2 = nums[i - 1][nums.length - 1 - j];
-							lastVal4 = nums[nums.length - 1 - j][i - 1];
-						}
-					}
-					lastVal1 = val1;
-					lastVal3 = val3;
-				}
-			}
-			weight *= commonRatio;
-		}
-		return [-jushi, jushi, jushi2, -jushi2, jushi3, -jushi3, jushi4, -jushi4].getMaxExcept();
-	},
-	getJushi3(nums) {
+	getJushi(nums) {
 		let values = [0, 0, 0, 0, 0, 0, 0, 0],
 			locs = [],
 			weight = 1,
@@ -425,6 +285,7 @@ AutoPlay.prototype = {
 				}
 				weight *= commonRatio;
 			}
+			weight *= 0.25;
 		}
 		values.forEach((val, i) => {
 			if (val > res.max) {
@@ -433,9 +294,6 @@ AutoPlay.prototype = {
 			}
 		});
 		return res;
-	},
-	getLog2(val) {
-		return val ? Math.log(val) / Math.log(2) : 0;
 	}
 }
 module.exports = AutoPlay;
@@ -445,7 +303,7 @@ var Keys = require('./keys')
 var Numbers = require('./numbers')
 var MessageBox = require('./message-box')
 
-var MOVE_ANIMATION_TIME = 200 // ms
+var MOVE_ANIMATION_TIME = 100 // ms
 
 function Game(el) {
 	this.$el = $(el || '.game-2048-board')
@@ -624,13 +482,13 @@ $.extend(Game.prototype, {
 		// 空闲位置 num 属性为 no
 		var cells = this.$board.find('[num="no"]')
 		var count = cells.length;
-		var rand = Math.floor(Math.random() * count); //cells.length - 1; //
+		var rand = 0; //Math.floor(Math.random() * count); //cells.length - 1; //
 		return cells.eq(rand)
 	},
 
 	// 随机数为 2 或 4
 	getRandomNumber: function() {
-		//return 2;
+		return 2;
 		return Math.random() > 0.1 ? 2 : 4
 	},
 

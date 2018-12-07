@@ -3,7 +3,7 @@ var Keys = require('./keys')
 var Numbers = require('./numbers')
 var MessageBox = require('./message-box')
 
-var MOVE_ANIMATION_TIME = 200 // ms
+var MOVE_ANIMATION_TIME = 100 // ms
 
 function Game(el) {
 	this.$el = $(el || '.game-2048-board')
@@ -182,13 +182,13 @@ $.extend(Game.prototype, {
 		// 空闲位置 num 属性为 no
 		var cells = this.$board.find('[num="no"]')
 		var count = cells.length;
-		var rand = Math.floor(Math.random() * count); //cells.length - 1; //
+		var rand = 0; //Math.floor(Math.random() * count); //cells.length - 1; //
 		return cells.eq(rand)
 	},
 
 	// 随机数为 2 或 4
 	getRandomNumber: function() {
-		//return 2;
+		return 2;
 		return Math.random() > 0.1 ? 2 : 4
 	},
 
