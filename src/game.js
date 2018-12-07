@@ -170,9 +170,6 @@ $.extend(Game.prototype, {
 		this.showNumber(pos.row, pos.col, num)
 		console.log("******************************addRandomNumber");
 	},
-	setNumber: function(loc, num) {
-		this.numbers.set(loc[0], loc[1], num)
-	},
 
 	getCellPosition: function($cell) {
 		return {

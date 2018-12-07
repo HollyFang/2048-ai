@@ -40,6 +40,7 @@ Array.prototype.max = function() {
 function AutoPlay(game) {
 	this.playingGame = game;
 	this.gameNumbers = game.numbers;
+	this.calNumbers = new Numbers();
 	this.playInterval = null;
 	this.calculating = false;
 }
@@ -77,8 +78,8 @@ AutoPlay.prototype = {
 		this.calculating = true;
 		this.startPlayTime = (new Date()).getTime();
 		let e = $.extend(true, {}, FAKE_EVENT),
-			_move = this.getBestMove(ITERATE_TIMES);
-		e.which = _move.which;
+			_move = this.getBestMove2(ITERATE_TIMES);
+		e.which = _move.move;
 		console.log("****************最佳的方向", e.which);
 		if (e.which)
 			this.playingGame.onKeydown(e);
@@ -155,22 +156,46 @@ AutoPlay.prototype = {
 		}
 		return move;
 	},
+	getBestMove2: function(times, nums) {
+		nums = nums || this.gameNumbers.numbers;
+		let _res = {
+			score: -1,
+			move: 0
+		};
+		for (let i = 0; i < 4; i++) {
+			let key = 37 + i;
+			this.calNumbers.numbers = $.extend(true, [], nums); 
+			let move = this._move(key, this.calNumbers);
+			console.log(`${times}=>${key}`);
+			if (move && move.length > 0) {
+				let a = this.getJushi3(this.calNumbers.numbers);
+				if (times > 0) {
+					this.calNumbers.numbers[a.loc[0]][a.loc[1]] = 2;
+					let cal2 = this.getBestMove2(times - 1, this.calNumbers.numbers);
+					a.max += cal2.score * Math.pow(0.9, ITERATE_TIMES - times + 1);
+				}
+				if (a.max > _res.score) {
+					_res.score = a.max;
+					_res.move = key;
+				}
+			}
+		}
+		return _res;
+	},
 	ifMove: function(key, nums, times) {
 		nums = nums || this.gameNumbers.numbers;
-		let _res = null,
-			_backGame = $.extend(true, {}, this.playingGame);
-		_backGame.numbers.numbers = $.extend(true, [], nums);
-		let calNums = _backGame.numbers,
-			move = this._move(key, calNums);
+		let _res = null;
+		this.calNumbers.numbers = $.extend(true, [], nums);
+		let move = this._move(key, this.calNumbers);
 		console.log(`${times}=>${key}`);
 		if (move && move.length > 0) {
-			let a = this.getJushi3(calNums.numbers);
+			let a = this.getJushi3(this.calNumbers.numbers);
 			_res = {
 				weight: a.max
 			};
 			if (times > 0) {
-				_backGame.setNumber(a.loc, 2);
-				let cal2 = this.getBestMove(times - 1, calNums.numbers);
+				this.calNumbers.numbers[a.loc[0]][a.loc[1]] = 2;
+				let cal2 = this.getBestMove(times - 1, this.calNumbers.numbers);
 				_res.weight += cal2.value * Math.pow(0.9, ITERATE_TIMES - times + 1);
 			}
 		}
